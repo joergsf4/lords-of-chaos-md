@@ -43,7 +43,8 @@ jobs:
           uv run tools/md_sound.py
 
       - name: Build ROM (SGDK, docker)
-        run: md/build.sh
+        run: |
+          DOCKER_ARGS="--user $(id -u):$(id -g) -e HOME=/tmp" md/build.sh
 
       - name: Name and checksum
         id: rom
