@@ -29,3 +29,19 @@ Thumbs.db
 /src/core/gen/
 /spikes/*/bin/
 /spikes/*/obj/
+
+# Mega Drive staging/build output (md/build.sh)
+/out/
+
+/md/src/gen/
+
+/md/res/tile_*.bin
+/md/res/mcl_v*.bin
+/md/res/title_*.bin
+/md/res/sfx/
+/md/res/music_*.bin
+/md/res/help_md.bin
+/md/res/tutorial_md.bin
+/md/res/lexicon_md.bin
+/md/res/spells_md.bin
+/md/res/pic_*.bin

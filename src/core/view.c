@@ -700,12 +700,16 @@ void view_compose(const World *w, int16_t x, int16_t y, FieldLayers *out)
  * (MAP_MAX_W * MAP_MAX_H * sizeof(StaticField) = 26 KB). Platforms with
  * little RAM (the Mega Drive port, repo lords-of-chaos-md: 64 KB) build with
  * VIEW_STATIC_CACHE=0 and compose the static layers on demand instead;
- * the result is the same, only slower. */
+ * the result is the same, only slower. VIEW_STATIC_CACHE=2 caches only the
+ * window (VIEW_W x VIEW_H fields, ~2 KB), indexed by world position modulo
+ * the window size: a scroll step recomposes just the new row or column. */
 #ifndef VIEW_STATIC_CACHE
 #define VIEW_STATIC_CACHE 1
 #endif
+#define VIEW_CACHE_FULL (VIEW_STATIC_CACHE == 1)
+#define VIEW_CACHE_WIN (VIEW_STATIC_CACHE == 2)
 
-#if VIEW_STATIC_CACHE
+#if VIEW_CACHE_FULL || VIEW_CACHE_WIN
 /* Static layers only: at most floor, 4 transition pieces, decor and feature
  * (a wall: floor, 4 half floors, decor, wall). A full FieldLayers per field
  * took 44 KB of the eZ80's scarce RAM (AGON-QUIRKS S6). */
@@ -714,14 +718,29 @@ typedef struct {
     uint8_t n;
     uint16_t id[STATIC_MAX];
 } StaticField;
+#endif
+#if VIEW_CACHE_FULL
 static StaticField scache[MAP_MAX_H][MAP_MAX_W];
+#endif
+#if VIEW_CACHE_WIN
+typedef struct {
+    int16_t wx, wy;             /* world field held, -1 = none */
+    StaticField f;
+} WinCache;
+static WinCache swin[VIEW_H][VIEW_W];
 #endif
 static const World *cache_world;
 static uint8_t cache_gen;
 
 void view_rebuild(const World *w)
 {
-#if VIEW_STATIC_CACHE
+#if VIEW_CACHE_WIN
+    uint8_t x, y;
+    for (y = 0; y < VIEW_H; y++)
+        for (x = 0; x < VIEW_W; x++)
+            swin[y][x].wx = -1;
+#endif
+#if VIEW_CACHE_FULL
     uint8_t x, y;
     for (y = 0; y < w->h; y++)
         for (x = 0; x < w->w; x++) {
@@ -798,7 +817,7 @@ static void compose_fast(const World *w, uint8_t vx, uint8_t vy, FieldLayers *ou
         out->id[0] = T_FLOOR_GRASS;
         return;
     }
-#if VIEW_STATIC_CACHE
+#if VIEW_CACHE_FULL
     out->n = scache[wy][wx].n;
     out->air = 0;
     out->ride = 0;
@@ -806,6 +825,26 @@ static void compose_fast(const World *w, uint8_t vx, uint8_t vy, FieldLayers *ou
     out->wade = 0;
     for (i = 0; i < out->n; i++)
         out->id[i] = scache[wy][wx].id[i];
+#elif VIEW_CACHE_WIN
+    {
+        WinCache *c = &swin[wy % VIEW_H][wx % VIEW_W];
+        if (c->wx != wx || c->wy != wy) {
+            FieldLayers f;
+            compose_static(w, wx, wy, &f);
+            c->wx = wx;
+            c->wy = wy;
+            c->f.n = f.n < STATIC_MAX ? f.n : STATIC_MAX;
+            for (i = 0; i < c->f.n; i++)
+                c->f.id[i] = f.id[i];
+        }
+        out->n = c->f.n;
+        out->air = 0;
+        out->ride = 0;
+        out->foe = 0;
+        out->wade = 0;
+        for (i = 0; i < out->n; i++)
+            out->id[i] = c->f.id[i];
+    }
 #else
     compose_static(w, wx, wy, out);
 #endif

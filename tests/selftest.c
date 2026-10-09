@@ -44,7 +44,9 @@ static World world;
 
 /* the two save games are big: one static pair for every test that needs them
  * (the eZ80 selftest has only ~20 KB of stack and heap) */
+#ifndef LOC_SELFTEST_NO_SAVE
 static SaveGame sg_a, sg_b;
+#endif
 
 static void load_house(void)
 {
@@ -5078,6 +5080,7 @@ static void test_m4h(void)
     area_reset();
 }
 
+#ifndef LOC_SELFTEST_NO_SAVE
 /* D64: a full 46x46 world - wrap at the far edge, sight, a save blob that
  * fits SAVE_BUF_SIZE and parses back. */
 static void test_d64(void)
@@ -5112,6 +5115,8 @@ static void test_d64(void)
           "d64: the 46x46 save parses back");
 }
 
+#endif
+
 /* D64: on the 46x46 Level 1 chests and finds grow with the area. */
 static void test_d64_populate(void)
 {
@@ -5135,6 +5140,7 @@ static void test_d64_populate(void)
           "d64: room left in the object list for chest loot and drops");
 }
 
+#ifndef LOC_SELFTEST_NO_SAVE
 static void test_m4i(void)
 {
     static uint8_t buf[SAVE_BUF_SIZE];
@@ -5192,6 +5198,8 @@ static void test_m4i(void)
               "m4i: wrong length refused");
     }
 }
+
+#endif
 
 static void test_m4k_ai(void)
 {
@@ -6036,8 +6044,12 @@ uint16_t core_selftest(selftest_log_fn log)
     test_m4g();
     test_m4h();
     test_m5a();
+#ifndef LOC_SELFTEST_NO_SAVE
     test_m4i();
+#endif
+#ifndef LOC_SELFTEST_NO_SAVE
     test_d64();
+#endif
     test_d64_populate();
     test_m4k_ai();
     test_m4_review();

@@ -1,0 +1,60 @@
+# Guided tutorial of the Mega Drive port: page 0 is the intro, pages 1..7 belong to the steps of the
+# tutorial engine (src/core/tutorial.c, same order as TutorialStep). The FIRST body line of a step page
+# is the hint line in the game (13 columns wide, it wraps).
+
+= Tutorial
+Willkommen beim Tutorial!
+Der Hinweis unten rechts zeigt
+immer den naechsten Schritt.
+Folge den Hinweisen bis zum
+Portal.
+
+Die Steuerung steht im
+Aktionsmenue unter A und im
+Hauptmenue unter Tasten.
+
+= 1/7 Bewegen
+D-Pad: Zauberer bewegen.
+
+Bewege den Zauberer ein Feld
+weit ueber die Wiese.
+
+= 2/7 Einheit wechseln
+C: zum Zwerg wechseln.
+
+C waehlt die naechste eigene
+Einheit, START macht sie fertig.
+
+= 3/7 Schluessel nehmen
+Auf den Schluessel, A: Aufheben.
+
+Stelle dich auf den Schluessel
+und waehle im Aktionsmenue
+Aufheben.
+
+= 4/7 Truhe oeffnen
+Truhe anrempeln oeffnet sie.
+
+Rempel die Truhe an - der
+Schluessel spart AP.
+
+= 5/7 Kampf
+Goblin anrempeln, besiegen.
+
+Heranbewegen und anrempeln.
+Der Zwerg mit der Axt
+schlaegt gut zu.
+
+= 6/7 Zaubern
+A: Zaubern, ziele, C wirkt.
+
+Waehle im Aktionsmenue
+Zaubern, dann den Zauber,
+ziele mit dem D-Pad, C wirkt.
+
+= 7/7 Portal
+Zum Portal im Osten, hinein.
+
+Fuehre den Zauberer zum
+Portal im Osten und tritt
+hinein - fertig!

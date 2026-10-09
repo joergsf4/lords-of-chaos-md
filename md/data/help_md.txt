@@ -1,0 +1,134 @@
+# Help pages of the Mega Drive port (compiled by tools/md_help.py into md/res/help_md.bin).
+# "= Titel" starts a page. The body is shown as written: at most 26 columns, 22 lines.
+
+= Steuerung
+D-Pad   gehen / angreifen
+        zwei = Diagonale
+A       Aktionsmenue
+A A     Aktion nochmal
+B       zurueck/abbrechen
+C       naechste Einheit
+START   Einheit fertig
+START lang  Zugende
+
+Zielen und Schauen:
+D-Pad bewegt den Cursor,
+C wirkt, B bricht ab.
+Beim Zaubern schaltet A
+Luft und Boden um.
+
+Sechs-Tasten-Pad:
+X zaubern Y nehmen Z sehen
+
+= Aktionsmenue
+Zeigt nur, was jetzt geht:
+Zaubern, Aufheben, Waffe
+wechseln, Tuer/Truhe nutzen,
+Schauen, Werfen, Schiessen,
+Fallen lassen, Essen, Lesen,
+Trinken, Phiole fuellen,
+Auf-/Absteigen, Auffliegen,
+Landen, Spielstand speichern,
+Zug beenden, Hauptmenue.
+
+Anrempeln: Tueren und Truhen
+oeffnen, Gegner und Terrain
+angreifen.
+
+= Warnungen
+Unten erscheint eine Zeile,
+wenn ein Gegner ins Bild
+kommt (mit Himmelsrichtung)
+oder wenn Kampflaerm, Magie
+oder ein Todesschrei in 16
+Feldern zu hoeren war.
+Die Gesamtkarte zeigt woher
+(tuerkise Bloecke).
+
+Schauen zeigt auch Skelette:
+dort ist jemand gestorben.
+
+Optionen: Rundenwechsel auto
+beendet die Runde selbst,
+sobald alle Einheiten fertig
+sind.
+
+= Ziel des Spiels
+Du fuehrst einen Zauberer und
+seine Kreaturen durch ein
+Szenario. Ziel: mit dem
+Zauberer durch das Portal
+entkommen - und dabei so viele
+Siegpunkte wie moeglich holen.
+
+Punkte gibt es fuer Schaetze,
+die du durchs Portal rettest,
+und fuer besiegte Gegner.
+
+Stirbt dein Zauberer, hast du
+verloren.
+
+= Runden und AP
+Eine Runde: erst die freien
+Kreaturen, dann die Zauberer.
+In Runde 1 ist nur Zaubern
+erlaubt.
+
+Jede Einheit hat Aktionspunkte
+(AP). Alles kostet AP: Schritte,
+Angriffe, Zauber, Aufheben.
+Ausdauer haelt die Einheit auf
+Trab.
+
+Die Balken zeigen AP, Ausdauer,
+Konstitution, Kampf,
+Verteidigung und Mana.
+
+= Kampf
+Anrempeln greift an. Die
+Trefferchance haengt von Kampf
+gegen Verteidigung ab, Waffen
+und Schilde zaehlen mit.
+
+Der Angegriffene schlaegt
+sofort zurueck, einmal pro
+Runde, kostenlos.
+
+Etwa jeder zwanzigste Treffer
+ist kritisch.
+
+Untote verwunden nur untote
+oder magisch bewaffnete
+Angreifer - und Zauber.
+
+= Magie
+A, Zaubern: Liste waehlen,
+mit dem D-Pad zielen, A
+schaltet Luft/Boden, C wirkt.
+Auch im Flug zaubern geht,
+nur Beschwoeren und Brauen
+nicht. Mana reicht fuer wenige Zauber
+pro Runde.
+
+Beschwoerungen rufen Kaempfer
+ins Spiel. Bolt und Blitz
+schlagen zu, Feuer, Brei,
+Ranken und Flut beherrschen
+das Gelaende. Shield schuetzt,
+Teleport und Auge erkunden,
+Curse und Subversion
+schwaechen.
+
+Traenke braut man am Kessel.
+
+= Objekte
+Aufheben, Fallen lassen und
+Naechstes Objekt stehen im
+Aktionsmenue. Nur Waffen in
+der Hand kaempfen mit ihren
+Werten; ein getragenes Schild
+verteidigt immer.
+
+Schluessel oeffnen Tueren und
+Truhen. Essen und Pilze heilen,
+Schriftrollen geben Hinweise.
