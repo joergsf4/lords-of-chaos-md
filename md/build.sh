@@ -33,6 +33,7 @@ if [ -d "$STAGE/out" ] && [ "$(cat "$STAGE/out/.flags" 2>/dev/null)" != "$FLAGS"
 mkdir -p "$STAGE/out"
 echo "$FLAGS" > "$STAGE/out/.flags"
 rm -f "$STAGE"/out/src/main.o "$STAGE"/out/src/main.d "$STAGE"/out/src/selftest.*
-docker run --rm --platform linux/amd64 -e EXTRA_FLAGS="-DVIEW_STATIC_CACHE=2 $SELF -Isrc/core -Isrc/core/gen ${EXTRA_FLAGS:-}" \
+# DOCKER_ARGS: e.g. "--user $(id -u):$(id -g)" on CI, where the container must write as the runner user
+docker run --rm --platform linux/amd64 ${DOCKER_ARGS:-} -e EXTRA_FLAGS="-DVIEW_STATIC_CACHE=2 $SELF -Isrc/core -Isrc/core/gen ${EXTRA_FLAGS:-}" \
     -v "$PWD/$STAGE":/m68k -t registry.gitlab.com/doragasu/docker-sgdk:v2.11
 echo "ROM: $STAGE/out/rom.bin"
