@@ -31,6 +31,15 @@ bool items_pick_up_object(World *w, uint8_t unit, uint8_t obj);
 uint8_t items_kind_of_tile(uint16_t tile);
 /* Drop the object in use onto the unit's field (ACT_DROP). */
 bool items_drop(World *w, uint8_t unit);
+/* Wield pack slot `slot` (NO_ITEM = bare hands), ACT_CHANGE. False: no such
+ * slot, the shield (it never takes the hand, D28), already in hand, no AP. */
+bool items_wield(World *w, uint8_t unit, uint8_t slot);
+/* What the carried objects add to the bars, before the constitution factor
+ * (the same additions items_combat / items_defence use): the weapon in
+ * hand's Combat, the best carried object's Defence. 0 for creatures that
+ * cannot use weapons. */
+uint8_t items_combat_bonus(const Unit *u);
+uint8_t items_defence_bonus(const Unit *u);
 /* Wield the next carried object (ACT_CHANGE); empty hands are allowed. */
 bool items_cycle(World *w, uint8_t unit);
 /* Throw the object in use along a direction: it flies up to 6 fields,

@@ -59,3 +59,9 @@ Für den Rundenablauf (#15) im Emulator nachgemessen (2026-10-03):
 - Schafft die G84 zwei Pfeile gleichzeitig ohne Ghosting? Stimmen die VKeys?
 - Welche Codes liefern `<` bzw. `>` und der Fn-Ziffernblock?
 - Fühlen sich 80 ms, 350 ms und 200 ms gut an? Alle drei sind Konstanten in `src/agon/main.c`.
+
+## Nachtrag D79/D82: Latenz
+
+- **Akkord-Fenster 40 statt 80 ms** (`WINDOW_CS`): der erste Schritt eines gehaltenen Pfeils kam bis zu 80 ms zu spät.
+- **Wiederholung ab Schrittende** (`chord_done`): die 350 ms bis zur ersten Wiederholung laufen nach dem Schritt, nicht davor (sonst zweimal schräg).
+- **Gleiten zuerst** (`glide` in `main.c`): Sicht und gescrolltes Neuzeichnen laufen nach der Animation, nicht davor. Nicht auf Hardware gemessen.

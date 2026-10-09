@@ -34,3 +34,26 @@ uv run tools/run.py --dump --time 8 --free-round1 --keys "dd" --screenshot   # G
   - `emulator/`, `toolchain/`, `sdcard/`, `.cache/`
 - **Plattformwissen** steht in `docs/AGON-QUIRKS.md`. Neue Erkenntnisse dort eintragen.
 - **Workflow:** Feature-Branch → PR → CI grün → Merge. `CHANGELOG.md` pflegen.
+
+## Studio-Framework (CCGS)
+
+Dieses Repo nutzt *Claude Code Game Studios* (v1.1.3): Agenten, Skills und Hooks unter `.claude/`, Einstellungen in `project.yaml` (`/settings` zeigt die wirksamen Werte). Die Regeln oben gehen vor; wo das Framework Engine-Standards annimmt, gilt diese Zuordnung:
+
+| Framework-Annahme | Hier |
+|---|---|
+| Engine (Godot/Unity/Unreal) | keine: C99 + eZ80, agondev. `engine.name` bleibt leer (kennt nur Godot/Unity/Unreal), die Engine steht als agondev v0.22 in `.claude/docs/technical-preferences.md`; Engine-Spezialisten entfallen |
+| Code-Wurzel | `src/` (`src/core` plattformfrei, `src/agon` Frontend), Host-Code in `host/` |
+| Design-Quelle (`design/gdd/`) | `docs/design/GDD.md` mit Entscheidungen in §14 (D1–D67 …) |
+| ADRs (`docs/architecture/`) | `docs/adr/` |
+| Tests (gdUnit4, `tests/unit/`) | `tests/selftest.c`, ausgeführt mit `uv run tools/test.py` (Host + eZ80) |
+| Sichtbeleg (Screenshot) | `uv run tools/run.py --dump --screenshot …`, Bilder nach `production/qa/evidence/` |
+
+**Arbeitsweise:** Frage → Optionen → Entscheidung → Entwurf → Freigabe. `modes.automation: guided`: Kleinigkeiten selbst entscheiden, bei Umfangsänderungen, Löschungen und Schemaänderungen nachfragen. Keine Commits ohne Auftrag. Eine übersprungene Frage ist keine Antwort.
+
+**Sprache:** Von Agenten geschriebene Dokumente auf Deutsch, Code und Kommentare auf Englisch.
+
+**Sitzungsstand:** `production/session-state/active.md` ist der Checkpoint. Nach Kompaktierung, Absturz oder `/clear` zuerst lesen. Den fachlichen Stand führt weiterhin `docs/HANDOVER.md`.
+
+**Referenz:** Die Spectrum-Portierung liegt als eigenes Repo in `../lords-of-chaos-zx-agon` und dient nur als Nachschlagewerk.
+
+@.claude/docs/coordination-rules.md

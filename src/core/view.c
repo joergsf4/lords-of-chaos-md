@@ -139,6 +139,27 @@ static uint16_t door_h_open_tile(const World *w, int16_t x, int16_t y)
     return T_DOOR_H_OPEN;
 }
 
+/* D84: the leaf of an open door in a north-south wall stands beside the
+ * frame, in the door's own tile. The marker field (D61) diagonally next to
+ * the door tells side and hinge: east marker = east side, north marker =
+ * hinged at the north jamb. No marker: the bare frame. */
+static uint16_t door_v_open_tile(const World *w, int16_t x, int16_t y)
+{
+    static const int8_t DX[4] = {-1, 1, -1, 1};
+    static const int8_t DY[4] = {-1, -1, 1, 1};
+    uint8_t i;
+    for (i = 0; i < 4; i++) {
+        bool east = DX[i] > 0, north = DY[i] < 0;
+        if (world_feature(w, (int16_t)(x + DX[i]), (int16_t)(y + DY[i])) !=
+            (north ? FE_LEAF_S : FE_LEAF_N))
+            continue;
+        if (east)
+            return north ? T_DOOR_V_OPEN_EN : T_DOOR_V_OPEN_ES;
+        return north ? T_DOOR_V_OPEN_WN : T_DOOR_V_OPEN_WS;
+    }
+    return T_DOOR_V_OPEN;
+}
+
 /* Fence and gate (D54): a low fence joins its neighbours like a wall line
  * does, but it is its own family - it does not hide the floor and does not
  * block sight. A door between fence posts is a gate. */
@@ -255,18 +276,20 @@ void view_set_origin(int16_t x, int16_t y)
 int16_t view_origin_x(void) { return origin_x; }
 int16_t view_origin_y(void) { return origin_y; }
 
+/* D78/D85: the window recentres on the unit, but only when it has moved
+ * more than one field off the middle (of 9): so every second step in one
+ * direction, not every step. At the map edge the window stops (clamp
+ * below). */
+#define VIEW_CENTRE (VIEW_W / 2)
+#define VIEW_SLACK 1
+
 void view_follow(const World *w, int16_t x, int16_t y)
 {
-    const int16_t margin = 2;
     int16_t rx = (int16_t)(x - origin_x), ry = (int16_t)(y - origin_y);
-    if (rx < margin)
-        origin_x = (int16_t)(x - margin);
-    else if (rx > VIEW_W - 1 - margin)
-        origin_x = (int16_t)(x - (VIEW_W - 1 - margin));
-    if (ry < margin)
-        origin_y = (int16_t)(y - margin);
-    else if (ry > VIEW_H - 1 - margin)
-        origin_y = (int16_t)(y - (VIEW_H - 1 - margin));
+    if (rx < VIEW_CENTRE - VIEW_SLACK || rx > VIEW_CENTRE + VIEW_SLACK)
+        origin_x = (int16_t)(x - VIEW_CENTRE);
+    if (ry < VIEW_CENTRE - VIEW_SLACK || ry > VIEW_CENTRE + VIEW_SLACK)
+        origin_y = (int16_t)(y - VIEW_CENTRE);
     if (w->wrap) {    /* keep the origin inside the world */
         origin_x = (int16_t)(((origin_x % w->w) + w->w) % w->w);
         origin_y = (int16_t)(((origin_y % w->h) + w->h) % w->h);
@@ -398,15 +421,10 @@ static void compose_static(const World *w, int16_t wx, int16_t wy, FieldLayers *
     } else if (fe == FE_DOOR_CLOSED || fe == FE_DOOR_OPEN || fe == FE_DOOR_LOCKED) {
         bool vertical = world_is_wall_line(w, wx, (int16_t)(wy - 1)) ||
                         world_is_wall_line(w, wx, (int16_t)(wy + 1));
-        push(out, vertical ? (fe == FE_DOOR_OPEN ? T_DOOR_V_OPEN : T_DOOR_V_CLOSED)
+        push(out, vertical ? (fe == FE_DOOR_OPEN ? door_v_open_tile(w, wx, wy) : T_DOOR_V_CLOSED)
                            : (fe == FE_DOOR_OPEN ? door_h_open_tile(w, wx, wy) : T_DOOR_H_CLOSED));
-    } else if (fe == FE_LEAF_E || fe == FE_LEAF_W) {
-        /* D65: drawn in the door frame, the field only keeps room for it */
-    } else if (fe == FE_LEAF_N || fe == FE_LEAF_S) {
-        /* D61: hinged at the wall - the door is diagonally east or west */
-        bool wall_east = world_feature(w, (int16_t)(wx + 1), (int16_t)(wy + (fe == FE_LEAF_S ? 1 : -1))) == FE_DOOR_OPEN;
-        push(out, fe == FE_LEAF_S ? (wall_east ? T_DOOR_LEAF_SE : T_DOOR_LEAF_SW)
-                                  : (wall_east ? T_DOOR_LEAF_NE : T_DOOR_LEAF_NW));
+    } else if (fe >= FE_LEAF_N && fe <= FE_LEAF_W) {
+        /* D65/D84: drawn in the door's own tile, the field only keeps room for it */
     } else if (fe == FE_CANDLE) {
         push(out, T_CANDLE_0);
     } else if (fe != FE_NONE) {
@@ -499,6 +517,37 @@ static bool roof_covered(const World *w, int16_t wx, int16_t wy, bool *wall)
     return false;
 }
 
+/* A closed (not lifted) roof field next to a lifted one, walls excluded. */
+static bool roof_closed_at(const World *w, int16_t x, int16_t y)
+{
+    bool wall;
+    if (!world_wrap(w, &x, &y) || !roof_covered(w, x, y, &wall) || wall)
+        return false;
+    return !roof_lifted(w, x, y);
+}
+
+/* D80: the opening in the roof gets soft edges. A lifted field beside a
+ * closed roof field keeps half of its roof as a checker (the pixels in
+ * between show the room), one beside only a diagonal neighbour a quarter:
+ * roof -> half -> quarter -> clear instead of a hard cut. */
+static void push_roof_fringe(const World *w, int16_t wx, int16_t wy,
+                             FieldLayers *out)
+{
+    static const int8_t N4[4][2] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
+    static const int8_t ND[4][2] = {{-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
+    uint8_t i;
+    for (i = 0; i < 4; i++)
+        if (roof_closed_at(w, (int16_t)(wx + N4[i][0]), (int16_t)(wy + N4[i][1]))) {
+            push(out, T_ROOF_HALF);
+            return;
+        }
+    for (i = 0; i < 4; i++)
+        if (roof_closed_at(w, (int16_t)(wx + ND[i][0]), (int16_t)(wy + ND[i][1]))) {
+            push(out, T_ROOF_FAINT);
+            return;
+        }
+}
+
 /* The roof goes on LAST, not with the static layers (D44): drawn early it
  * sat below the units, and the renderer paints bottom-up - a figure under
  * a closed roof appeared to stand on it. Pushed here it covers whatever is
@@ -511,8 +560,10 @@ static void apply_roof_rule(const World *w, int16_t wx, int16_t wy,
         return;
     if (viewer_under_roof(w))            /* D46: indoors, no roofs at all */
         return;
-    if (!wall && roof_lifted(w, wx, wy)) /* D41: the glimpse through a door */
+    if (!wall && roof_lifted(w, wx, wy)) {   /* D41: the glimpse through a door */
+        push_roof_fringe(w, wx, wy, out);
         return;
+    }
     push(out, T_ROOF);
 }
 

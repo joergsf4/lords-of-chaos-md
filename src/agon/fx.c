@@ -338,10 +338,26 @@ void fx_pause(uint8_t cs)
     wait_cs(cs);
 }
 
+static void (*event_hook)(const GameEvent *);
+
+void fx_set_event_hook(void (*fn)(const GameEvent *e))
+{
+    event_hook = fn;
+}
+
+static void tell_hook(const GameEvent *ev, uint8_t n)
+{
+    uint8_t i;
+    if (event_hook)
+        for (i = 0; i < n; i++)
+            event_hook(&ev[i]);
+}
+
 void fx_drain_sounds(void)
 {
     static GameEvent ev[EVENT_RING];
     uint8_t n = events_drain(ev, EVENT_RING), i;
+    tell_hook(ev, n);
     if (!fx_enabled)
         return;
     for (i = 0; i < n; i++) {
@@ -403,6 +419,7 @@ bool fx_drain_play(World *w, const Sight *s)
     n = events_drain(ev, EVENT_RING);
     if (!n)
         return false;
+    tell_hook(ev, n);
     if (!fx_enabled)
         return false;                    /* scripted run: drop the show */
     touched_n = 0;

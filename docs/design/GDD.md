@@ -771,7 +771,7 @@ Wie beim Amiga werden pro Feld **mehrere Ebenen übereinander** gezeichnet (B1.2
   Schluessel aufheben → Truhe oeffnen → Goblin besiegen → Zaubern → Portal.
   Die Hinweiszeile steht in Meldungszeile 3; Texte aus `help/tutorial.hlp`.
   Die Runde-1-Bewegungssperre [PM 7] ist im Tutorial aufgehoben.
-- **Lexikon** (Taste `i`, Hauptmenü): was der Spieler je gesehen hat —
+- **Lexikon** (Taste `k` im Spiel, Hauptmenü): was der Spieler je gesehen hat —
   Kreaturen (26) und Objekte (40) als Bitmasken, persistent in
   `/loc/lexicon.dat`. Liste zeigt nur Entdecktes mit Namen, Rest „???“;
   Enter öffnet die Detailseite mit Porträt, Werten aus den Tabellen und
@@ -1035,6 +1035,19 @@ Die Vorschläge sind als **Startwerte** übernommen (D22). Jede Frage wird vor i
 | D73 | Sichtwarnung (Playtest 2026-10-08) | **Kommt eine fremde Kreatur ins Blickfeld**, erscheint unten „Goblin im Osten!“ (bei mehreren „(+n)“). Die Zeile bleibt, bis der Spieler eine Aktion macht; Umsehen, Tab, Karte, Nachrichten und Hilfe zählen nicht als Aktion. |
 | D74 | Nachrichten neben der Gesamtkarte (Playtest 2026-10-08) | **Die Gesamtkarte (`m`) zeigt rechts im Panel die neuesten Nachrichten** (neueste oben weiß, ältere grau, in Zeilen zu 13 Zeichen). Das Nachrichtenfenster `l` bleibt. |
 | D75 | Fokus auf Welt 1 (Nutzer 2026-10-08) | **Slayer's Dungeon und Ragaril's Domain sind im Menü ausgegraut** und nicht wählbar, bis sie spielbar sind. Die Zufallskarte (Varianten von Level 1) bleibt. |
+| D76 | Türblätter blockieren nicht (Nutzer 2026-10-08) | Das Blatt einer offenen Tür ist nur noch eine Zeichenmarke auf dem Nachbarfeld und blockiert weder Bewegung noch Sicht. Türen klemmen nie. Ersetzt das Blockieren aus D61. Die senkrechten Blätter werden neu gezeichnet. |
+| D77 | Bonus im Balken, Inventar (Nutzer 2026-10-08) | Gegenstände, die Kampf oder Verteidigung erhöhen (Waffe in der Hand, bestes Schild/Waffe im Gepäck), erscheinen im Balken als Bonus-Segment wie Zauber. Taste `i` öffnet das Inventar (D87; das Lexikon liegt auf `k`): Auswahl mit Pfeilen, die Beschreibung kommt aus dem Lexikon, Enter/`w` nimmt den Gegenstand in die Hand (AP wie Wechseln). Das Schild wird nur getragen. |
+| D78 | Kamera zentriert (Nutzer 2026-10-08) | Das Fenster folgt der Einheit so, dass sie in der Mitte steht (Rand 4 von 9 Feldern); vorher erst 2 Felder vor dem Rand. An Kartenrändern stoppt es. |
+| D79 | Wiederholungsverzögerung ab Schrittende (Nutzer 2026-10-08) | Die 350 ms bis zur ersten Wiederholung eines gehaltenen Pfeils laufen ab dem Ende des Schritts, nicht ab dem Start. Ein langsamer Schritt fraß sonst die Verzögerung, und ein zweiter Schritt kam, bevor der Finger loslassen konnte (zweimal schräg). |
+| D80 | Weiche Dachkanten (Nutzer 2026-10-08) | Ein geöffnetes Dachfeld neben geschlossenem Dach behält die Hälfte der Ziegel als Schachbrett, ein diagonal angrenzendes ein Viertel: Dach, halb, viertel, offen statt harter Kante. Kacheln `roof_half`, `roof_faint` entstehen in `tools/build_tiles.py`. |
+| D81 | Tür höher als Fenster (Nutzer 2026-10-08) | Die Tür in waagerechten Wänden ist zwei Reihen höher (Rahmen ab Reihe 6), das Fenster niedriger (Scheibe 8 Reihen statt 12); das senkrechte Fenster ebenfalls kürzer. Gate und senkrechte Tür unverändert. |
+| D82 | Schnellere Reaktion beim Laufen (Nutzer 2026-10-08) | Das Gleiten startet sofort über dem alten Fenster; Sicht und gescrolltes Neuzeichnen folgen erst danach. Das Akkord-Fenster ist 40 statt 80 ms. |
+| D83 | Log und Gesamtkarte (Nutzer 2026-10-08) | Das Log enthält alle Ereignisse außer Laufen (Kampf, Zauber, Tode, Funde, Türen). Neben der Gesamtkarte beginnt es oben mit dem neuesten Eintrag, am Kartenrand. Die Karte zeigt Hauswände, Türen, Fenster, Wege und Gelände in eigenen Farben, die aktive Figur blinkt. |
+| D84 | Türblatt in der Türkachel (Nutzer 2026-10-08) | Auch bei Türen in senkrechten Wänden wird das offene Blatt in der Türkachel neben dem Rahmen gezeichnet (Seite und Angel aus der Markierung auf dem Nachbarfeld), nicht als eigenes Objekt auf dem Feld. |
+| D85 | Kamera alle zwei Schritte (Nutzer 2026-10-08) | Das Fenster zentriert nur neu, wenn die Einheit mehr als ein Feld von der Mitte entfernt ist, also bei gleichbleibender Richtung alle zwei Schritte. Ersetzt D78. |
+| D86 | Neutrale und Feinde auf der Karte (Nutzer 2026-10-08) | Gesamtkarte: eigene Figuren weiß, Gegner rot, neutrale Kreaturen hellcyan; Legende darunter. |
+| D87 | Inventar auf `i`, Lexikon auf `k` (Nutzer 2026-10-08) | Das Inventar liegt auf der Taste `i` (wie im GDD §5.1 vorgesehen), das Lexikon im Spiel auf `k`. |
+| D88 | Ziffernblock (Nutzer 2026-10-08) | Mit NumLock an bewegt der Ziffernblock wie die Pfeile (1 bis 9 ohne 5, Diagonalen als Akkord, Wiederholung). Mit NumLock aus gilt weiter Pfeile/Pos1/Ende/Bild. |
 | F7 | Dächer: nur Regel oder auch sichtbar? | e | **Entschieden:** sichtbar. Von außen sieht man das Dach; steht eine eigene Einheit im Gebäude, wird das Dach über dem Gebäude ausgeblendet. |
 | F8 | 5-Ladungen-Grenze beibehalten? | i | Ja, aber im Setup abschaltbar. |
 | F9 | Setup-Panel und Timer in v1.0? | i | Nur die Zufalls-Zauberer-Stufe; Spiellänge folgt aus dem Szenario, Timer nach v1.0. **[2026-10-08: Stufe entfällt, das Original kennt nur einen Zufallszauberer (K3.2); das Setup würfelt ihn mit `Z` neu (FRAGEN F15)]** |

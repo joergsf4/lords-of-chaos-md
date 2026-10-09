@@ -29,7 +29,7 @@ typedef enum {
     FE_ROCK, FE_DOOR_LOCKED /* C2 */, FE_CHEST_FREE /* C1: opens without a key */,
     FE_WINDOW /* D54: wall you can see through */, FE_FENCE /* D54: low, see-through */,
     /* D61: the leaf of an open door, named after the field edge it
-     * stands on; blocks movement, not sight */
+     * stands on; blocks neither movement nor sight (D76) */
     FE_LEAF_N, FE_LEAF_E, FE_LEAF_S, FE_LEAF_W,
     FE_COUNT
 } Feature;
@@ -358,12 +358,12 @@ bool world_open_door(World *w, uint8_t unit, int16_t x, int16_t y);
 
 /* D61: an open door's leaf swings into the room (the roofed side; else
  * away from the opener at fx/fy, fx < 0 = unknown) and stands on the
- * field beside the doorway, which it blocks. Without room on the room
- * side it swings out; with no room anywhere the door is jammed (false).
+ * field beside the doorway, as a drawing marker only (D76: it does not
+ * block). Without room on the room side it swings out; with no room
+ * anywhere there is no leaf (false) and the door opens as a bare frame.
  * Gates fold flat and have no leaf. */
 bool world_leaf_spot(const World *w, int16_t x, int16_t y, int16_t fx,
                      int16_t fy, int16_t *lx, int16_t *ly, uint8_t *leaf);
-bool world_door_jammed(const World *w, int16_t x, int16_t y, int16_t fx, int16_t fy);
 /* A door between fence posts (D54). */
 bool world_is_gate(const World *w, int16_t x, int16_t y);
 /* Close an open door (C2, ACT_OPEN_DOOR): hands needed, nobody standing in

@@ -16,10 +16,10 @@ by construction. Four frame tiles, named after the hinge side and the swing:
 The field beside the doorway only reserves the room the leaf needs (D61);
 nothing is drawn there.
 
-Door in a north-south wall (door_v_*): the leaf runs east-west and cannot
-fit into the narrow frame, so it stays on the diagonal field:
-  door_leaf_{n,s}{w,e}       - its face turned to the viewer,
-                               hinged at the wall on the west/east side
+Door in a north-south wall (door_v_*): the wall shows only its cap, so the
+leaf is drawn in the door's own tile, beside the frame, hinged at the north
+or south jamb and swung east or west (D84, no extra object on the field):
+  door_v_open_{e,w}{n,s}     - side of the room, hinge jamb
 
     uv run tools/art/make_door_leaf.py
 
@@ -59,12 +59,12 @@ def frame_leaf(away: bool, hinge_east: bool) -> Image.Image:
     d = ImageDraw.Draw(im)
     if away:
         # seen through the opening: free edge farther away = smaller, higher
-        poly = [(17, 9), (11, 10), (11, 17), (17, 19)]
+        poly = [(17, 7), (11, 8), (11, 17), (17, 19)]
     else:
         # swung out of the frame: free edge nearer = taller, lower
         for x in range(10, 17):                 # its shadow on the floor
             d.point((x, 23), K)
-        poly = [(17, 8), (9, 10), (9, 22), (17, 20)]
+        poly = [(17, 6), (9, 8), (9, 22), (17, 20)]
     top, bottom = poly[0][1], poly[3][1]
     d.polygon(poly, fill=WOOD)
     d.line(poly + [poly[0]], fill=FRAME)
@@ -79,22 +79,24 @@ def frame_leaf(away: bool, hinge_east: bool) -> Image.Image:
     return im if hinge_east else im.transpose(Image.FLIP_LEFT_RIGHT)
 
 
-def face_leaf(top: int, wall_east: bool) -> Image.Image:
-    """Leaf seen face-on, standing on the south edge (top = 7) or the
-    north edge (top = 1) of its field, hinged at the wall to the west
-    (or east): it reaches from the wall 17 px into the field."""
+def side_leaf(east: bool, north: bool) -> Image.Image:
+    """The open leaf of a door in a north-south wall, beside the frame: a
+    plank hinged at the jamb (x = 17 east of the frame), its free end swung
+    towards the viewer. West and south are the mirror images."""
     im = blank()
-    x0, x1 = (7, 23) if wall_east else (0, 16)
-    y0, y1 = top, top + 15
-    rect(im, x0, y0, x1, y1, FRAME)
-    rect(im, x0 + 1, y0 + 1, x1 - 1, y1 - 1, WOOD)
-    for y in range(y0 + 1, y1):
-        im.putpixel((x0 + 1, y), LIGHT)   # lit edge
-        for x in (x0 + 5, x0 + 9):        # plank seams
-            im.putpixel((x, y), PLANK)
-    rect(im, x0 + 1, y0 + 1, x1 - 1, y0 + 1, LIGHT)
-    im.putpixel((x0 + 3 if wall_east else x1 - 3, y0 + 8), KNOB)   # far from the hinge
-    rect(im, x0 + 1, y1 + 1, x1, min(y1 + 1, 23), K)   # shadow at its foot
+    d = ImageDraw.Draw(im)
+    poly = [(17, 4), (23, 7), (23, 17), (17, 14)]
+    d.polygon(poly, fill=WOOD)
+    d.line(poly + [poly[0]], fill=FRAME)
+    d.line([(18, 6), (18, 13)], fill=LIGHT)     # lit hinge edge
+    d.line([(20, 6), (20, 14)], fill=PLANK)     # plank seam
+    im.putpixel((22, 11), KNOB)
+    for x, y in ((18, 5), (18, 13)):            # iron straps over the jamb
+        d.line([(x, y), (x + 1, y)], fill=K)
+    if not north:
+        im = im.transpose(Image.FLIP_TOP_BOTTOM)
+    if not east:
+        im = im.transpose(Image.FLIP_LEFT_RIGHT)
     return im
 
 
@@ -105,7 +107,7 @@ def open_frames() -> None:
     for y in range(10, 20):
         for x in range(6, 18):
             h.putpixel((x, y), CLEAR)
-    for y in range(9, 16):                # dark passage, the sill shows below
+    for y in range(7, 16):                # dark passage (frame top row 6, D81), the sill shows below
         for x in range(6, 18):
             h.putpixel((x, y), K)
     h.save(TILES / "door_h_open.png")
@@ -123,9 +125,6 @@ def open_frames() -> None:
 
 
 def main() -> None:
-    for edge, top in (("s", 7), ("n", 1)):
-        face_leaf(top, False).save(TILES / f"door_leaf_{edge}w.png")
-        face_leaf(top, True).save(TILES / f"door_leaf_{edge}e.png")
     open_frames()
     base = Image.open(TILES / "door_h_open.png").convert("RGBA")
     for stem, away in (("door_h_open", False), ("door_h_far", True)):
@@ -133,6 +132,12 @@ def main() -> None:
             t = base.copy()
             t.alpha_composite(frame_leaf(away, east))
             t.save(TILES / f"{stem}_{side}.png")
+    vbase = Image.open(TILES / "door_v_open.png").convert("RGBA")
+    for east in (True, False):
+        for north in (True, False):
+            t = vbase.copy()
+            t.alpha_composite(side_leaf(east, north))
+            t.save(TILES / f"door_v_open_{'e' if east else 'w'}{'n' if north else 's'}.png")
 
 
 if __name__ == "__main__":

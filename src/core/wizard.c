@@ -220,7 +220,7 @@ void wizard_slot_reset(uint8_t slot)
 }
 
 /* A sensible starting template that FITS the 600 XP budget (nothing above
- * 600, no cheating): the core spells and eight creatures at the levels below,
+ * 600, no cheating): the core spells and ten creatures (incl. a vampire and a giant) at the levels below,
  * then the rest of the XP goes round-robin into the attributes. Applied on
  * request at scenario start; never overwrites a designed book. */
 void wizard_apply_standard_set(Wizard *w)
@@ -230,6 +230,7 @@ void wizard_apply_standard_set(Wizard *w)
         {SP_MAGIC_EYE, 2}, {SP_MAGIC_LIGHTNING, 1}, {SP_CURSE, 1},
         {SP_GIANT_BAT, 2}, {SP_GOBLIN, 2}, {SP_DWARF, 3}, {SP_UNICORN, 1},
         {SP_HARPY, 1}, {SP_ZOMBIE, 1}, {SP_GORILLA, 1}, {SP_GRYPHON, 1},
+        {SP_VAMPIRE, 1}, {SP_GIANT, 1},        /* the two heavy hitters */
     };
     uint8_t i;
     bool bought;

@@ -816,8 +816,6 @@ static void do_step(u8 mask)
             update_sight();
         } else if (!(CREATURES[ride_actor_kind(&world.units[att])].flags & CF_USE)) {
             msg(1, C_BRIGHT_RED, "Keine Haende fuer die Tuer.");
-        } else if (world_door_jammed(&world, nx, ny, world.units[att].x, world.units[att].y)) {
-            msg(1, C_BRIGHT_RED, "Die Tuer klemmt: kein Platz.");
         } else {
             msg(1, C_BRIGHT_RED, "Zu wenig AP fuer die Tuer.");
         }

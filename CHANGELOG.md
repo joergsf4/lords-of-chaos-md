@@ -2,6 +2,41 @@
 
 Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionen nach Milestones (siehe `docs/ROADMAP.md`).
 
+## [Unreleased] – Standard-Zauberer mit starken Kreaturen (2026-10-08)
+
+### Kamera und Karte (D85, D86)
+- **Ziffernblock (D88):** Mit NumLock an bewegen 1 bis 9 (ohne 5) wie die Pfeile samt Diagonalen und Wiederholung (`input_arrow`, `chord_keys`); mit NumLock aus ging es schon über Pfeile, Pos1, Ende, Bild↑/↓. Die Codes (0x0C + Ziffer) folgen der FabGL-Reihenfolge und sind im Emulator noch nicht gemessen.
+- **Kamera zentriert nur alle zwei Schritte (D85):** Das Fenster bleibt stehen, solange die Einheit höchstens ein Feld von der Mitte entfernt ist, und zentriert neu, wenn sie zwei Felder entfernt ist (`VIEW_SLACK` in `src/core/view.c`). Ersetzt D78 (jeder Schritt).
+- **Neutrale und Feinde unterscheiden (D86):** Gesamtkarte: du weiß, Feind rot, Neutral hellcyan, mit Legende unter der Karte. Fenster dafür dunkelcyan, Sumpf magenta.
+
+### Türen in senkrechten Wänden (D84)
+- **Kein Extra-Objekt mehr:** Das Blatt einer offenen Tür in einer senkrechten Wand steht nicht mehr als eigene Kachel auf dem Nachbarfeld, sondern wird in der Türkachel neben dem Rahmen gezeichnet, wie bei den waagerechten Wänden. Vier neue Kacheln `door_v_open_{e,w}{n,s}` (Seite, Angel), die vier `door_leaf_*` entfallen. `view.c`: `door_v_open_tile`. Die Markierung auf dem Nachbarfeld bleibt als unsichtbare Zeichenmarke. View-Hash neu.
+
+### Log und Karte (D83)
+- **Log mit allen Ereignissen außer Laufen:** Treffer, Wunden, Fehlschläge, Tode, Zauber und zerstörtes Gelände kommen aus dem Ereignisring (`fx_set_event_hook`, `log_event`), Funde, Türen, Essen und Ähnliches aus den Meldezeilen (`render_set_message_hook`, `log_message`). 20 statt 10 Einträge.
+- **Log neben der Gesamtkarte:** beginnt oben, neuester Eintrag zuerst, direkt am Kartenrand (erste freie Textspalte) statt ab Spalte 27, Umbruch an Leerzeichen.
+- **Gesamtkarte lesbarer:** Wände hellgrau, Fenster cyan, Türen gelb, Wege und Brücken gelb, Holzboden braun, Gras grün, Wald hellgrün, Wasser blau, Sumpf cyan; Felder ohne Lücke. Die aktive Figur blinkt weiß/grün.
+
+### Neu
+- **Inventar (D77):** Taste `i` (D87; das Lexikon liegt jetzt auf `k`). Die Einträge des Rucksacks mit Pfeilen wählen; unten stehen Kachel, Zahlen und die Beschreibung aus dem Lexikon (`screen_inventory`). Enter oder `w` nimmt den Gegenstand in die Hand (`items_wield`), nochmal Enter legt ihn weg. Das Schild wird nur getragen.
+- **Bonus im Balken (D77):** Waffe in der Hand (Kampf) und bestes getragenes Schild oder Waffe (Verteidigung) erscheinen im Balken als Bonus-Segment (`items_combat_bonus`, `items_defence_bonus`).
+- **Lexikon:** Alle 40 Objektbeschreibungen neu geschrieben, jede beginnt mit „Wozu:" und nennt die Zahlen (Apfel heilt 10, nicht 4, wie bisher dort stand). Puffer 7168 Byte.
+- **Weiche Dachkanten (D80):** Kacheln `roof_half` und `roof_faint`, Regel `push_roof_fringe` in `src/core/view.c`.
+- **Kamera zentriert (D78):** Die Einheit steht in der Fensterhälfte (Rand 4 statt 2).
+
+### Geändert
+- **Tür höher als Fenster (D81):** `door_h_closed`, `door_h_open` und die Blatt-Kacheln zwei Reihen höher, `window_h` und `window_v` niedriger (`tools/art/make_door_leaf.py`, `make_night_set.py`, Aseprite-Quellen abgeglichen).
+- **Schneller reagieren (D82):** Das Gleiten startet vor Sicht und Neuzeichnen, Akkord-Fenster 40 statt 80 ms.
+
+### Behoben
+- **Zweimal schräg (D79):** Die Wiederholungsverzögerung läuft ab Schrittende (`chord_done`).
+
+### Behoben
+- **Türblätter blockieren nicht mehr (D76, ersetzt das Blockieren aus D61):** Neben offenen Türen kam die Meldung „Unzerstörbar", weil das unsichtbare Blattfeld blockierte (bei waagerechten Wänden zeichnet D65 das Blatt im Rahmen). Das Blatt ist jetzt nur noch eine Zeichenmarke. Die Tür kann nicht mehr klemmen (`world_door_jammed` entfällt); ohne freies Nachbarfeld öffnet sie als bloßer Rahmen. Tests `d61`/`d76` angepasst. **Offen:** die senkrechten Türblätter müssen neu gezeichnet werden.
+
+### Geändert
+- **Standardvorlage** (`wizard_apply_standard_set`) enthält zusätzlich **Vampir 1** (29 XP, Mana 28) und **Riese 1** (17 XP, Mana 16): zwei starke Kreaturen, zusammen 46 XP, die von den Attributen abgehen. Das 600-XP-Budget bleibt eingehalten und wird bis auf höchstens 1 XP ausgegeben (Test verschärft). Test in `tests/selftest.c` ergänzt.
+
 ## [Unreleased] – ADRs zu Dateiformaten und KI, Aufräumen (2026-10-08)
 
 ### Dokumentation

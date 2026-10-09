@@ -36,7 +36,7 @@
  * cursor_blue, M3d/M3e object and portal tiles, M3g four treasures;
  * M5c added the seven fx tiles after "floor_*" (IDs shifted again);
  * D70 added "remains" (IDs after it shift). */
-#define HOUSE_VIEW_HASH 0x9CFED84CUL
+#define HOUSE_VIEW_HASH 0x3B18F952UL
 
 static selftest_log_fn out;
 static uint16_t fails;
@@ -164,7 +164,26 @@ static void test_view(void)
           "view: corner wall mask E+S");
 
     view_compose(&world, 5, 3, &f);   /* door between stone and path */
-    check(has_layer(&f, T_DOOR_V_OPEN), "view: door orientation vertical");
+    check(has_layer(&f, T_DOOR_V_OPEN) || has_layer(&f, T_DOOR_V_OPEN_EN) ||
+          has_layer(&f, T_DOOR_V_OPEN_ES) || has_layer(&f, T_DOOR_V_OPEN_WN) ||
+          has_layer(&f, T_DOOR_V_OPEN_WS), "view: door orientation vertical");
+    {   /* D84: the leaf of a door in a north-south wall is drawn in its own tile */
+        uint8_t keep = world.feature[2][6];
+        world.feature[2][6] = FE_LEAF_S;             /* marker north-east of the door */
+        view_invalidate();
+        view_compose(&world, 5, 3, &f);
+        check(has_layer(&f, T_DOOR_V_OPEN_EN), "d84: marker north-east: leaf east, hinge north");
+        world.feature[2][6] = keep;
+        view_invalidate();
+        world.feature[2][6] = FE_LEAF_S;
+        view_invalidate();
+        view_compose(&world, 6, 2, &f);
+        check(!has_layer(&f, T_DOOR_V_OPEN) && !has_layer(&f, T_DOOR_V_OPEN_EN) &&
+              !has_layer(&f, T_DOOR_V_CLOSED), "d84: the marker field draws no leaf of its own");
+        world.feature[2][6] = keep;
+        view_invalidate();
+        view_compose(&world, 5, 3, &f);          /* the checks below read this field */
+    }
     check(has_layer(&f, T_FLOOR_PATH_HALF_E) && !has_layer(&f, T_FLOOR_STONE_HALF_W),
           "view: half floor only where neighbour floor differs");
 
@@ -350,7 +369,15 @@ static void test_terrain(void)
     check(a.n == b.n && memcmp(a.id, b.id, a.n * sizeof a.id[0]) == 0, "terrain: wrap-around x=-1 == x=35");
     view_set_origin(0, 0);
     view_follow(&world, 0, 0);
-    check(view_origin_x() == 34 && view_origin_y() == 34, "terrain: camera wraps (origin 34,34)");
+    check(view_origin_x() == 32 && view_origin_y() == 32, "terrain: camera wraps (origin 32,32, D78 centre 4)");
+    {   /* D85: one field off the middle keeps the window, two recentre */
+        view_set_origin(10, 10);
+        view_follow(&world, 15, 14);              /* offset +1 from the middle (14) */
+        check(view_origin_x() == 10, "d85: one field off the middle: no scroll");
+        view_follow(&world, 16, 14);              /* offset +2 */
+        check(view_origin_x() == 12 && view_origin_y() == 10,
+              "d85: two fields off: recentre on the unit");
+    }
     view_invalidate();
     view_update(&world);
     view_clean();
@@ -580,6 +607,23 @@ static void test_terrain(void)
               "d56: the walls beside the window cut the view off at an angle");
         view_compose(&world, SX + 4, SY + 3, &f);
         check(!has_layer(&f, T_ROOF), "d56: the roof opens on a field seen through the window");
+        {   /* somewhere along the edge of the seen cone a lifted field is fringed */
+            uint8_t fringed = 0, bad = 0;
+            for (y = 2; y <= 4; y++)
+                for (x = 2; x <= 6; x++) {
+                    view_compose(&world, SX + x, SY + y, &f);
+                    if (has_layer(&f, T_ROOF_HALF) || has_layer(&f, T_ROOF_FAINT)) {
+                        fringed++;
+                        if (has_layer(&f, T_ROOF))
+                            bad++;          /* a fringe never sits on a closed roof */
+                    }
+                }
+            check(fringed > 0 && bad == 0,
+                  "d80: a lifted field beside closed roof keeps a see-through fringe");
+        }
+        view_compose(&world, SX + 4, SY - 1, &f);
+        check(!has_layer(&f, T_ROOF_HALF) && !has_layer(&f, T_ROOF_FAINT),
+              "d80: outside the building there is no fringe");
         view_compose(&world, SX + 2, SY + 3, &f);
         check(has_layer(&f, T_ROOF), "d56: a roofed field out of sight stays covered");
         view_compose(&world, SX + 4, SY + 1, &f);
@@ -641,6 +685,31 @@ static void test_chord(void)
     check(chord_poll(&c, 8) == 0 && chord_poll(&c, 9) == ARROW_RIGHT,
           "chord: held arrow fires after the window");
     check(chord_key(&c, ARROW_RIGHT, false, 30) == 0, "chord: release after firing is silent");
+    {   /* D88: a numpad diagonal is two arrows at the same instant */
+        Chord n;
+        chord_init(&n, 4, 35, 20);
+        check(chord_keys(&n, ARROW_DOWN | ARROW_LEFT, true, 50) == (ARROW_DOWN | ARROW_LEFT),
+              "chord d88: a numpad diagonal moves at once");
+        check(chord_keys(&n, ARROW_DOWN | ARROW_LEFT, false, 60) == 0 && n.held == 0,
+              "chord d88: and releases cleanly");
+        check(chord_keys(&n, ARROW_UP, true, 100) == 0 &&
+              chord_keys(&n, ARROW_UP, false, 102) == ARROW_UP,
+              "chord d88: a single numpad direction is a plain tap");
+    }
+    {   /* D79: a slow step must not eat the delay before the first repeat */
+        Chord d;
+        uint8_t diag = ARROW_DOWN | ARROW_RIGHT;
+        chord_init(&d, 8, 35, 20);
+        chord_key(&d, ARROW_DOWN, true, 100);
+        check(chord_key(&d, ARROW_RIGHT, true, 103) == diag, "chord d79: the chord fires");
+        chord_done(&d, 140);                     /* the step took 370 ms */
+        check(chord_poll(&d, 150) == 0 && chord_poll(&d, 174) == 0,
+              "chord d79: no repeat while the delay runs from the end of the step");
+        check(chord_poll(&d, 175) == diag, "chord d79: the first repeat after 350 ms");
+        chord_done(&d, 200);                     /* later repeats keep their clock */
+        check(chord_poll(&d, 194) == 0 && chord_poll(&d, 195) == diag,
+              "chord d79: later repeats keep the 200 ms clock");
+    }
 
     chord_init(&c, W, D, R);
     chord_key(&c, ARROW_UP, true, 200);
@@ -4360,7 +4429,7 @@ static void test_m4e(void)
               "m4e: dismounting brings the rider back");
     }
 
-    {   /* D61: an open door's leaf stands beside the doorway and blocks */
+    {   /* D61/D76: an open door's leaf stands beside the doorway, drawn only, never blocking */
         static const uint8_t *const MAPS[6] = {
             MAPBIN_MANY_COLOURED_LAND, MAPBIN_RAGARILS_DOMAIN, MAPBIN_SLAYERS_DUNGEON,
             MAPBIN_TESTLAND, MAPBIN_TUTORIAL, MAPBIN_WIZARD_HOUSE};
@@ -4395,7 +4464,7 @@ static void test_m4e(void)
                     }
                 }
         }
-        check(jammed == 0, "d61: no door on any map starts jammed");
+        check(jammed == 0, "d61: every door on the maps has a leaf field");
         check(open_bare == 0, "d61: doors that start open have their leaf");
 
         /* D65: the leaf of a door in an east-west wall is drawn in the frame;
@@ -4440,8 +4509,8 @@ static void test_m4e(void)
         world.units[u].ap = 40;
         check(world_open_door(&world, u, 8, 5) &&
               world.feature[5][8] == FE_DOOR_OPEN &&
-              world.feature[4][9] == FE_LEAF_S && world_blocks(&world, 9, 4),
-              "d61: the leaf swings out past the candles and blocks its field");
+              world.feature[4][9] == FE_LEAF_S && !world_blocks(&world, 9, 4),
+              "d76: the leaf swings out past the candles and does not block its field");
         check(!world_blocks(&world, 8, 5) && !world_blocks(&world, 9, 5),
               "d61: the doorway itself stays free");
         check(world_close_door(&world, u, 8, 5) &&
@@ -4449,9 +4518,11 @@ static void test_m4e(void)
               "d61: closing folds the leaf back");
         world.feature[4][9] = FE_ROCK;
         world.feature[6][9] = FE_ROCK;
-        check(world_door_jammed(&world, 8, 5, 9, 5) &&
-              !world_open_door(&world, u, 8, 5) && world.units[u].ap == 28,
-              "d61: no room for the leaf anywhere - the door is jammed");
+        world.units[u].ap = 40;
+        check(world_open_door(&world, u, 8, 5) &&
+              world.feature[5][8] == FE_DOOR_OPEN && !world_blocks(&world, 8, 5),
+              "d76: no room for the leaf anywhere - the door still opens, bare frame");
+        check(world_close_door(&world, u, 8, 5), "d76: and closes again");
         world.feature[4][9] = FE_NONE;
         world.feature[6][9] = FE_NONE;
         world.feature[4][7] = FE_NONE;            /* clear the inner candle */
@@ -4749,7 +4820,9 @@ static void test_m4f(void)
               w->book.level[SP_MAGIC_SHIELD] == 3 &&
               w->book.level[SP_GIANT_BAT] == 2 && w->book.level[SP_GRYPHON] == 1,
               "m4f: the standard template fills spells + 8 creatures");
-        check(w->com > 5 && w->def > 5 && w->xp <= 20 && wizard_valid(w),
+        check(w->book.level[SP_VAMPIRE] == 1 && w->book.level[SP_GIANT] == 1,
+              "m4f: the standard template includes two strong creatures");
+        check(w->com > 5 && w->def > 5 && w->xp <= 1 && wizard_valid(w),
               "m4f: the template spends the 600 XP up to a few points (no cheating)");
         wizard_apply_standard_set(w);   /* idempotent: bolt already there */
         check(w->book.level[SP_MAGIC_BOLT] == 4,
@@ -5838,6 +5911,32 @@ static void test_m5e_balance(void)
               "m5e: nothing to wield but a shield");
         check(items_defence(&world, 0) == 12 + WEAPONS[WEAPON_SHIELD].defence,
               "m5e: the carried shield still defends");
+    }
+
+    {   /* D77: item bonuses for the bars, and wielding a chosen slot */
+        load_house();
+        world.units[0].ap = 40;
+        world.units[0].items[0] = OBJ_SWORD;
+        world.units[0].items[1] = OBJ_SHIELD;
+        world.units[0].item_count = 2;
+        world.units[0].in_use = NO_ITEM;
+        check(items_combat_bonus(&world.units[0]) == 0 &&
+              items_defence_bonus(&world.units[0]) == WEAPONS[WEAPON_SHIELD].defence,
+              "d77: nothing in hand: no combat bonus, the carried shield defends");
+        check(items_wield(&world, 0, 0) && world.units[0].in_use == 0 &&
+              world.units[0].ap == 36,
+              "d77: wielding the chosen slot costs the change AP");
+        check(items_combat_bonus(&world.units[0]) == WEAPONS[WEAPON_SWORD].combat,
+              "d77: the sword in hand shows its Combat bonus");
+        check(!items_wield(&world, 0, 0) && world.units[0].ap == 36,
+              "d77: already in hand: no cost");
+        check(!items_wield(&world, 0, 1) && !items_wield(&world, 0, 2),
+              "d77: the shield and empty slots are refused");
+        check(items_wield(&world, 0, NO_ITEM) && world.units[0].in_use == NO_ITEM &&
+              items_combat_bonus(&world.units[0]) == 0,
+              "d77: bare hands again");
+        world.units[0].ap = 0;
+        check(!items_wield(&world, 0, 0), "d77: no wielding without AP");
     }
 
     {   /* D29: bolt scales with the book level - level 1 wounds, level 8

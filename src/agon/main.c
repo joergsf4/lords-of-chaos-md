@@ -61,7 +61,7 @@ static void log_push(const char *line);   /* message ring (M4j) */
 #define TURN_SEED 42    /* fixed: emulator runs replay like the selftest */
 #define ANIM_CS 40     /* candle flicker period in centiseconds */
 #define BLINK_CS 30    /* cursor blink period (Amiga: flashing cursor) */
-#define WINDOW_CS 8    /* arrow chord window 80 ms (GDD 5.2, ADR 0007) */
+#define WINDOW_CS 4    /* arrow chord window 40 ms (GDD 5.2, ADR 0007; D82: was 80) */
 #define DELAY_CS 35    /* held key: first repeat after 350 ms */
 #define REPEAT_CS 20   /* then one step per 200 ms */
 
@@ -74,6 +74,7 @@ static bool confirm_end = false;   /* Shift+E asks before ending the turn */
 static bool quit_ask = false;      /* Esc asks before leaving the game (B3) */
 static bool look_mode = false;     /* x: examine any field (GDD 5.1) */
 static bool overlay_open;          /* big map / log / help / context */
+static bool overlay_map;           /* ... and it is the big map (D83: blinking figure) */
 static bool pickup_menu;           /* g: choose what to pick up */
 static bool overlay_is_context;    /* the context menu replays keys */
 static bool replay_valid;          /* letter to act after menu close */
@@ -243,6 +244,25 @@ static void glide(uint8_t id, int16_t old_x, int16_t old_y)
     un = &world.units[u];
     if (ride_rider_kind(un) < CR_COUNT)
         return;
+    /* D82: glide first, over the window as it is. Sight and the scrolled
+     * redraw (together ~100+ ms) used to run BEFORE the animation and were
+     * the biggest part of the wait between key and movement; now only the
+     * two fields of the step are redrawn, the sprite starts at once and the
+     * rest follows after it. */
+    world_delta(&world, view_origin_x(), view_origin_y(), old_x, old_y, &ovx, &ovy);
+    world_delta(&world, view_origin_x(), view_origin_y(), un->x, un->y, &nvx, &nvy);
+    if (ovx >= 0 && ovx < VIEW_W && ovy >= 0 && ovy < VIEW_H &&
+        nvx >= 0 && nvx < VIEW_W && nvy >= 0 && nvy < VIEW_H) {
+        view_hide_unit(id);
+        view_update(&world);
+        render_fields();
+        render_cursor(0, 0, CURSOR_GREEN, false);
+        fx_glide((uint16_t)(CREATURE_TILE[un->kind] + un->owner), ovx, ovy, nvx, nvy);
+        view_hide_unit(NO_UNIT);
+        update_sight();
+        view_follow(&world, un->x, un->y);
+        return;
+    }
     update_sight();
     view_follow(&world, un->x, un->y);
     world_delta(&world, view_origin_x(), view_origin_y(), old_x, old_y, &ovx, &ovy);
@@ -847,7 +867,6 @@ static void cast_targeted(bool dump)
     }
     if (shot.hit) {
         snprintf(msg, sizeof msg, "Zauber trifft: %u Schaden.", shot.damage);
-        log_push(msg);
     } else
         snprintf(msg, sizeof msg, "Zauber verpufft.");
     render_message(1, shot.hit ? C_BRIGHT_YELLOW : C_GREY, msg);
@@ -860,7 +879,7 @@ static void cast_targeted(bool dump)
     frame(dump);
 }
 
-#define LOG_RING 10
+#define LOG_RING 20
 static char log_ring[LOG_RING][40];
 static uint8_t log_head;
 
@@ -869,6 +888,67 @@ static void log_push(const char *line)
     strncpy(log_ring[log_head], line, sizeof log_ring[0]);
     log_ring[log_head][sizeof log_ring[0] - 1] = 0;
     log_head = (uint8_t)((log_head + 1) % LOG_RING);
+}
+
+/* D83: the log holds every event except walking. Fights, spells and deaths
+ * come from the core's event ring (what the player may see), everything
+ * else from the message lines: good news and findings, no refusals, no
+ * walking (those lines are empty or grey) and nothing the events already
+ * said. */
+static const char *whose(uint8_t owner)
+{
+    return owner == OWN_P1 ? "Dein " : owner == OWN_P2 ? "Feind " : "";
+}
+
+static void log_event(const GameEvent *e)
+{
+    char msg[40];
+    if (e->owner != OWN_P1 && e->type != EV_SMASH &&
+        !sight_visible(&p1_sight, &world, e->x, e->y))
+        return;                          /* happened in the fog */
+    switch (e->type) {
+    case EV_HIT:
+        snprintf(msg, sizeof msg, "%s%s -%u", whose(e->owner), CREATURES[e->kind].name, e->a);
+        break;
+    case EV_WOUND:
+        snprintf(msg, sizeof msg, "%s%s: Wunde!", whose(e->owner), CREATURES[e->kind].name);
+        break;
+    case EV_MISS:
+        snprintf(msg, sizeof msg, "%s%s verfehlt", whose(e->owner), CREATURES[e->kind].name);
+        break;
+    case EV_DEATH:
+        snprintf(msg, sizeof msg, "%s%s %s", whose(e->owner), CREATURES[e->kind].name,
+                 e->a ? "verblutet" : "stirbt");
+        break;
+    case EV_SPELL:
+        snprintf(msg, sizeof msg, "%s: %s", e->owner == OWN_P1 ? "Du" : "Gegner",
+                 SPELLS[e->kind].name);
+        break;
+    case EV_SMASH:
+        snprintf(msg, sizeof msg, "%s zerstoert", name_feature(e->kind));
+        break;
+    default:
+        return;                          /* swings and projectiles say nothing new */
+    }
+    log_push(msg);
+}
+
+static void log_message(uint8_t line, uint8_t colour, const char *text)
+{
+    static char last[40];
+    if (colour != C_BRIGHT_GREEN && colour != C_BRIGHT_YELLOW &&
+        colour != C_BRIGHT_CYAN && colour != C_BRIGHT_MAGENTA)
+        return;
+    if (line == 0 && strncmp(text, "Runde", 5) == 0)
+        return;                          /* the turn banner */
+    if (!strncmp(text, "Treffer", 7) || !strncmp(text, "Zauber trifft", 13) ||
+        !strncmp(text, "Toedliche", 9) || strstr(text, "stirbt"))
+        return;                          /* the events said it */
+    if (strncmp(text, last, sizeof last - 1) == 0)
+        return;                          /* the same line again */
+    strncpy(last, text, sizeof last - 1);
+    last[sizeof last - 1] = 0;
+    log_push(text);
 }
 
 /* Move the active unit in direction mask m (chord.h); messages on failure. */
@@ -965,7 +1045,6 @@ static void step(uint8_t m, bool dump)
         if (!dump)
             glide(mover_id, old_x, old_y);
         if (game_try_enter_portal(&game, &world, active())) {
-            log_push("Gerettet durch das Portal!");
             sound_play(SND_PORTAL);
             snprintf(msg, sizeof msg, "Gerettet! Zauberer-1: %u VP.",
                      game.vp[OWN_P1]);
@@ -990,9 +1069,6 @@ bump:
                 update_sight();        /* the open door changes lines of sight */
             } else if (!(CREATURES[ride_actor_kind(&world.units[active()])].flags & CF_USE)) {
                 render_message(1, C_BRIGHT_RED, "Keine Haende fuer die Tuer.");
-            } else if (world_door_jammed(&world, nx, ny, world.units[active()].x,
-                                         world.units[active()].y)) {
-                render_message(1, C_BRIGHT_RED, "Die Tuer klemmt: kein Platz.");
             } else {
                 render_message(1, C_BRIGHT_RED, "Zu wenig AP fuer die Tuer.");
             }
@@ -1498,6 +1574,7 @@ static void draw_context_menu(void)
     char buf[40];
     uint8_t i, row = 3;
     const Unit *u = &world.units[active()];
+    overlay_map = false;
     render_menu_clear();
     render_heading(16, 2, C_BRIGHT_YELLOW, "Aktionen");
     for (i = 0; i < sizeof ITEMS / sizeof ITEMS[0]; i++) {
@@ -1517,15 +1594,65 @@ static void draw_context_menu(void)
     render_menu_text(2, 24, C_GREY, "Taste wirkt, Esc zu.");
 }
 
-static void draw_log_side(void);
+static void draw_log_side(uint8_t col);
+
+static uint8_t map_cell;
+
+/* What a field looks like on the big map (D83): walls, doors and windows
+ * of the houses, paths and bridges, water, forest, grass - not just grey. */
+static uint8_t map_colour(int16_t x, int16_t y)
+{
+    switch (world_feature(&world, x, y)) {
+    case FE_WALL:
+    case FE_ROCK: return C_WHITE;
+    case FE_WINDOW: return C_CYAN;
+    case FE_DOOR_CLOSED:
+    case FE_DOOR_LOCKED: return C_BRIGHT_YELLOW;
+    case FE_DOOR_OPEN: return C_RED;
+    case FE_FENCE: return C_RED;
+    case FE_TREE: return C_GREEN;
+    default: break;
+    }
+    switch (world_floor(&world, x, y)) {
+    case FL_WATER: return C_BLUE;
+    case FL_PATH:
+    case FL_BRIDGE: return C_YELLOW;
+    case FL_WOOD: return C_RED;
+    case FL_GRASS:
+    case FL_TALL_GRASS: return C_GREEN;
+    case FL_FOREST:
+    case FL_MAGIC_WOOD:
+    case FL_SHADOW_WOOD: return C_BRIGHT_GREEN;
+    case FL_SWAMP: return C_MAGENTA;
+    default: return C_GREY;
+    }
+}
+
+static void map_cell_paint(int16_t x, int16_t y, uint8_t colour)
+{
+    int px = 2 + x * map_cell, py = 16 + y * map_cell;
+    vdp_gcol(0, colour);
+    vdp_filled_rectangle(px, py, px + map_cell - 1, py + map_cell - 1);
+}
+
+/* The active figure blinks on the open map (white / green, the cursor's
+ * rhythm). */
+static void map_blink(void)
+{
+    const Unit *u = &world.units[active()];
+    map_cell_paint(u->x, u->y, cursor_on ? C_BRIGHT_WHITE : C_BRIGHT_GREEN);
+}
 
 static void draw_big_map(void)
 {
     char head[40];
     int16_t x, y;
+    uint8_t log_col;
     /* 5 px a field fits 36 fields into the overlay (216 x 190 px), the
      * 46x46 map gets 4 (D64) */
     uint8_t cell = (world.w > 36 || world.h > 36) ? 4 : 5;
+    overlay_map = true;
+    map_cell = cell;
     render_menu_clear();
     snprintf(head, sizeof head, "Gesamtkarte  Runde %u", turns.round);
     render_menu_text(2, 0, C_BRIGHT_YELLOW, head);
@@ -1533,8 +1660,6 @@ static void draw_big_map(void)
         for (x = 0; x < world.w; x++) {
             uint8_t colour;
             uint8_t u = world_unit_at(&world, x, y, UL_GROUND);
-            uint8_t px = (uint8_t)(2 + x * cell);
-            uint8_t py = (uint8_t)(16 + y * cell);
             if (!sight_explored(&p1_sight, &world, x, y))
                 continue;                  /* unexplored stays black (GDD 3.4) */
             if (u == NO_UNIT)
@@ -1545,16 +1670,14 @@ static void draw_big_map(void)
                 u = NO_UNIT;
             if (u != NO_UNIT)
                 colour = world.units[u].owner == OWN_P1 ? C_BRIGHT_WHITE
-                                                        : C_BRIGHT_RED;
+                         : world.units[u].owner == OWN_NEUTRAL ? C_BRIGHT_CYAN
+                         : C_BRIGHT_RED;           /* D86: you / neutral / enemy */
             else if (game.portal_open && x == game.portal_x &&
                      y == game.portal_y)
                 colour = C_BRIGHT_MAGENTA;
             else
-                colour = world_floor(&world, x, y) == FL_WATER ? C_BLUE
-                         : world_floor(&world, x, y) == FL_FOREST ? C_GREEN
-                         : C_GREY;
-            vdp_gcol(0, colour);
-            vdp_filled_rectangle(px, py, (int)(px + cell - 2), (int)(py + cell - 2));
+                colour = map_colour(x, y);
+            map_cell_paint(x, y, colour);
         }
     {   /* D69: where the last noises came from, roughly */
         uint8_t k;
@@ -1564,7 +1687,14 @@ static void draw_big_map(void)
             vdp_rectangle(px, py, px + 3 * cell - 1, py + 3 * cell - 1);
         }
     }
-    draw_log_side();                     /* D74: what happened, beside it */
+    log_col = (uint8_t)((2 + world.w * cell + 7) / 8);   /* right at the map's edge */
+    if (log_col > 27)
+        log_col = 27;
+    render_menu_text(2, 27, C_BRIGHT_WHITE, "Du");       /* D86: legend of the figures */
+    render_menu_text(5, 27, C_BRIGHT_RED, "Feind");
+    render_menu_text(11, 27, C_BRIGHT_CYAN, "Neutral");
+    draw_log_side(log_col);              /* D74: what happened, beside it */
+    map_blink();
     if (foe_wiz_x >= 0) {                /* C9: where he was last seen */
         int px = 2 + foe_wiz_x * cell, py = 16 + foe_wiz_y * cell;
         vdp_gcol(0, C_BRIGHT_YELLOW);
@@ -1581,44 +1711,56 @@ static void draw_log(void)
 {
     uint8_t i, idx;
     char buf[40];
+    overlay_map = false;
     render_menu_clear();
     render_heading(16, 2, C_BRIGHT_YELLOW, "Nachrichten");
     for (i = 0; i < LOG_RING; i++) {
         idx = (uint8_t)((log_head + i) % LOG_RING);
-        snprintf(buf, sizeof buf, "%-24.24s", log_ring[idx]);
+        snprintf(buf, sizeof buf, "%-26.26s", log_ring[idx]);
         render_menu_text(1, (uint8_t)(3 + i), C_BRIGHT_WHITE, buf);
     }
     render_menu_text(2, 24, C_GREY, "Esc zurueck.");
 }
 
-/* D74: the log in the side panel while the big map is open - the
- * newest entries, each cut into lines of 13 columns. */
-static void draw_log_side(void)
+/* D74/D83: the log beside the big map. It starts at the top, newest entry
+ * first, and sits right at the map's edge (col = the first free text
+ * column); a long entry wraps into up to three lines. */
+static void draw_log_side(uint8_t col)
 {
-    uint8_t row = 26, k;
+    uint8_t row = 1, k, width = (uint8_t)(39 - col);
     render_side_clear();
-    render_menu_text(27, 0, C_BRIGHT_YELLOW, "Nachrichten");
-    for (k = 0; k < LOG_RING && row > 1; k++) {
+    render_menu_text(col, 0, C_BRIGHT_YELLOW, "Nachrichten");
+    for (k = 0; k < LOG_RING && row < 26; k++) {
         const char *line = log_ring[(log_head + LOG_RING - 1 - k) % LOG_RING];
-        uint8_t len = (uint8_t)strlen(line), parts, p;
-        if (!len)
-            continue;
-        parts = (uint8_t)((len + 12) / 13);
-        if (parts > 3)
-            parts = 3;
-        if (row < parts + 1)
-            break;
-        row = (uint8_t)(row - parts);
-        for (p = 0; p < parts; p++) {
-            char buf[14];
-            snprintf(buf, sizeof buf, "%-13.13s", line + p * 13);
-            render_menu_text(27, (uint8_t)(row + p), k == 0 ? C_BRIGHT_WHITE : C_GREY, buf);
+        uint8_t colour = k == 0 ? C_BRIGHT_WHITE : C_GREY;
+        const char *rest = line;
+        uint8_t shown = 0;
+        while (*rest && row < 26 && shown < 3) {       /* wrap at spaces */
+            uint8_t n = (uint8_t)strlen(rest), cut;
+            char buf[40];
+            if (n > width) {
+                cut = width;
+                while (cut > 0 && rest[cut] != ' ')
+                    cut--;
+                if (cut == 0)
+                    cut = width;                   /* no space: hard cut */
+            } else {
+                cut = n;
+            }
+            memcpy(buf, rest, cut);
+            buf[cut] = 0;
+            render_menu_line(col, row++, colour, buf);
+            rest += cut;
+            while (*rest == ' ')
+                rest++;
+            shown++;
         }
     }
 }
 
 static void draw_help(void)
 {
+    overlay_map = false;
     static const char *const LINES[] = {
         "Pfeile+Akkorde  Bewegen",
         "Pos1 Ende Bild  Diagonal",
@@ -2421,6 +2563,8 @@ int main(int argc, char **argv)
     if (!dump && !do_bench && !sound_init())   /* samples from the SD */
         log_line("SFX missing - waveform fallback");
     render_set_error_hook(error_sound);
+    render_set_message_hook(log_message);
+    fx_set_event_hook(log_event);
     kbuf_init(16);
     if (!lexicon_load(&lex))             /* discoveries from the last run */
         lexicon_init(&lex);
@@ -2591,7 +2735,7 @@ dispatch:
             if (alert_on && e.isdown && !look_mode && !targeting && !overlay_open &&
                 e.vkey != VK_TAB && e.vkey != VK_ESC && e.vkey != VK_F1 &&
                 e.ascii != 'x' && e.ascii != 'm' && e.ascii != 'l' &&
-                e.ascii != 'i' && e.ascii != 'A' && e.ascii != 13) {
+                e.ascii != 'i' && e.ascii != 'k' && e.ascii != 'A' && e.ascii != 13) {
                 alert_on = false;
                 render_message(2, C_GREY, "");
             }
@@ -2749,9 +2893,11 @@ dispatch:
                      * chord still has to see every release, or a tapped
                      * arrow stays "held" and the unit walks on by itself
                      * (AGON-QUIRKS K6). */
-                    m = chord_key(&chord, input_arrow(e.vkey), e.isdown != 0, now);
-                    if (m && !overlay_open)
+                    m = chord_keys(&chord, input_arrow(e.vkey), e.isdown != 0, now);
+                    if (m && !overlay_open) {
                         step(m, dump);
+                        chord_done(&chord, (uint16_t)getsysvar_time());
+                    }
                 }
                 continue;
             }
@@ -2802,8 +2948,13 @@ dispatch:
             } else if (e.ascii == 'l') {
                 overlay_open = true;
                 draw_log();
-            } else if (e.ascii == 'i') {           /* lexicon (M5) */
+            } else if (e.ascii == 'k') {           /* lexicon (M5, D87: was i) */
                 screen_lexicon(&lex);
+                game_redraw(dump);
+            } else if (e.ascii == 'i') {           /* inventory (D77, D87) */
+                confirm_end = false;
+                screen_inventory(&world, active());
+                update_sight();
                 game_redraw(dump);
             } else if (e.ascii == 13 && !spell_list && !targeting) {
                 overlay_open = true;               /* context menu (GDD 5.1) */
@@ -3074,15 +3225,19 @@ dispatch:
             while ((vk = fx_take_release()) != 0) {
                 uint8_t arrow = input_arrow(vk);
                 if (arrow) {
-                    m = chord_key(&chord, arrow, false, now);
-                    if (m)
+                    m = chord_keys(&chord, arrow, false, now);
+                    if (m) {
                         step(m, dump);
+                        chord_done(&chord, (uint16_t)getsysvar_time());
+                    }
                 }
             }
         }
         m = chord_poll(&chord, now);
-        if (m)
+        if (m) {
             step(m, dump);
+            chord_done(&chord, (uint16_t)getsysvar_time());
+        }
         if (getsysvar_time() >= next_anim) {   /* candle and water animation */
             next_anim += ANIM_CS;
             if (!overlay_open && !spell_list && !cast_menu && !pickup_menu) {
@@ -3093,6 +3248,8 @@ dispatch:
         if (getsysvar_time() >= next_blink) {  /* blinking cursor sprite */
             next_blink += BLINK_CS;
             cursor_on = !cursor_on;
+            if (overlay_open && overlay_map)
+                map_blink();
             if (!overlay_open && !spell_list && !cast_menu && !pickup_menu &&
                 !game_ended)
                 place_cursor();

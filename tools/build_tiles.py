@@ -86,6 +86,17 @@ def half_floor(im: Image.Image, box) -> Image.Image:
     return out
 
 
+def dither(im: Image.Image, keep) -> Image.Image:
+    """Keep only the pixels where keep(x, y) holds: a see-through version
+    (D80: soft edge of a lifted roof, 50% checker / 25% grid)."""
+    out = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    for y in range(im.height):
+        for x in range(im.width):
+            if keep(x, y):
+                out.putpixel((x, y), im.getpixel((x, y)))
+    return out
+
+
 def collect() -> list[tuple[str, Image.Image]]:
     entries: list[tuple[str, Image.Image]] = []
     for p in sorted(TILES.glob("*.png")):
@@ -100,6 +111,9 @@ def collect() -> list[tuple[str, Image.Image]]:
                 entries.append((f"{p.stem}_{owner}", owner_variant(im, owner)))
         else:
             entries.append((p.stem, im))
+        if p.stem == "roof":
+            entries.append(("roof_half", dither(im, lambda x, y: (x + y) % 2 == 0)))
+            entries.append(("roof_faint", dither(im, lambda x, y: x % 2 == 0 and y % 2 == 0)))
         if p.stem in FLOORS:
             for d, box in HALF_BOXES.items():
                 entries.append((f"{p.stem}_half_{d}", half_floor(im, box)))

@@ -451,7 +451,9 @@ static void panel_caps(const World *w, uint8_t owner, uint8_t *cap)
     }
 }
 
-/* What a timed effect adds to a bar, shown as the extra segment on top. */
+/* What a timed effect or a carried object adds to a bar, shown as the extra
+ * segment on top (D77: the weapon in hand on Combat, the best carried
+ * shield/weapon on Defence). */
 static uint8_t panel_bonus(const Unit *u, uint8_t i)
 {
     uint8_t k, sum = 0;
@@ -464,6 +466,10 @@ static uint8_t panel_bonus(const Unit *u, uint8_t i)
             (i == 4 && (kind == EFF_SHIELD || kind == EFF_PROTECT)))
             sum = (uint8_t)(sum + effect_power(u, kind));
     }
+    if (i == 3)
+        sum = (uint8_t)(sum + items_combat_bonus(u));
+    else if (i == 4)
+        sum = (uint8_t)(sum + items_defence_bonus(u));
     return sum;
 }
 
@@ -925,11 +931,20 @@ void render_set_error_hook(void (*fn)(void))
     error_hook = fn;
 }
 
+static void (*message_hook)(uint8_t, uint8_t, const char *);
+
+void render_set_message_hook(void (*fn)(uint8_t, uint8_t, const char *))
+{
+    message_hook = fn;
+}
+
 void render_message(uint8_t line, uint8_t colour, const char *text)
 {
     char *buf;
     if (line >= MSG_LINES)
         return;
+    if (message_hook && text[0])
+        message_hook(line, colour, text);
     if (colour == C_BRIGHT_RED && error_hook && text[0])
         error_hook();                     /* refusals buzz (main.c) */
     buf = msg_text[line];

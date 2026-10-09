@@ -46,6 +46,9 @@ const char *tutorial_hint_line(uint8_t step);
 /* The lexicon of discoveries: list of creatures and objects, Enter shows
  * the detail page (portrait, values, description). Blocking, Esc leaves. */
 void screen_lexicon(const Lexicon *lex);
+/* D77: the active unit's pack (i): arrows choose, the lexicon text says what
+ * an object is for, Enter/w takes it in the hand (ACT_CHANGE). */
+void screen_inventory(World *w, uint8_t unit);
 
 /* Load /loc/help/lexicon.hlp once for the designer's spell shop detail
  * (creature pages are 0..CR_COUNT-1 in csv order). False when missing. */

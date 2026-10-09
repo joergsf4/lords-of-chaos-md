@@ -22,7 +22,8 @@ x            Feld untersuchen (Look),
 m            Gesamtkarte, Nachrichten
              und gehoertem Laerm
 l            Nachrichten
-i            Lexikon
+i            Inventar (Enter: Hand)
+k            Lexikon
 F1           diese Hilfe
 Esc          abbrechen / zurueck
 

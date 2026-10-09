@@ -8,6 +8,7 @@
 #ifndef LOC_FX_H
 #define LOC_FX_H
 
+#include "../core/events.h"
 #include "../core/sight.h"
 #include "../core/world.h"
 
@@ -26,6 +27,8 @@ uint8_t fx_take_release(void);
 /* Unseen phases (phase screen): play the queued events as sounds only,
  * one after the other. */
 void fx_drain_sounds(void);
+/* Every drained event is shown to this hook first (D83: the log). */
+void fx_set_event_hook(void (*fn)(const GameEvent *e));
 /* Wait (keys are dropped, releases kept). */
 void fx_pause(uint8_t cs);
 /* Drain the core event ring and play every event as a tile overlay plus

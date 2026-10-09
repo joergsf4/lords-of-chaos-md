@@ -21,6 +21,17 @@ uint8_t input_arrow(uint8_t vkey)
     case VK_DOWN: return ARROW_DOWN;
     case VK_LEFT: return ARROW_LEFT;
     case VK_RIGHT: return ARROW_RIGHT;
+    default: break;
+    }
+    switch (vkey) {                      /* numpad, NumLock on (D88) */
+    case VK_KP_1: return ARROW_DOWN | ARROW_LEFT;
+    case VK_KP_1 + 1: return ARROW_DOWN;
+    case VK_KP_1 + 2: return ARROW_DOWN | ARROW_RIGHT;
+    case VK_KP_1 + 3: return ARROW_LEFT;
+    case VK_KP_1 + 5: return ARROW_RIGHT;
+    case VK_KP_1 + 6: return ARROW_UP | ARROW_LEFT;
+    case VK_KP_1 + 7: return ARROW_UP;
+    case VK_KP_9: return ARROW_UP | ARROW_RIGHT;
     default: return 0;
     }
 }

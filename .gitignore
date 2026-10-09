@@ -45,3 +45,10 @@ Thumbs.db
 /md/res/lexicon_md.bin
 /md/res/spells_md.bin
 /md/res/pic_*.bin
+
+# Claude Code Game Studios framework: local and per-session state
+project.local.yaml
+CLAUDE.local.md
+production/session-logs/
+production/session-state/
+.claude/agent-memory/

@@ -102,7 +102,7 @@ def csv_rows(path: Path) -> int:
 
 # Read buffers in src/agon/screens.c (HELP_MAX, LEXICON_MAX, SPELLS_MAX):
 # a bigger file would be read cut off and rejected as invalid.
-BUFFER_LIMIT = {"lexicon_de": 6656, "spells_de": 4600}
+BUFFER_LIMIT = {"lexicon_de": 7168, "spells_de": 4600}
 DEFAULT_LIMIT = 4096
 
 

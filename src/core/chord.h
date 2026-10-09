@@ -30,9 +30,17 @@ typedef struct {
 void chord_init(Chord *c, uint8_t window_cs, uint8_t delay_cs, uint8_t repeat_cs);
 /* Feed an arrow key event; returns a direction mask to move now, or 0. */
 uint8_t chord_key(Chord *c, uint8_t arrow, bool down, uint16_t now_cs);
+/* Feed several arrows at once (a numpad diagonal is two): every bit of mask
+ * as one key event at the same instant. Returns the direction to move now. */
+uint8_t chord_keys(Chord *c, uint8_t mask, bool down, uint16_t now_cs);
 /* Call regularly: fires a held single arrow once the window has passed and
  * repeats held directions. */
 uint8_t chord_poll(Chord *c, uint16_t now_cs);
+/* Call after the step of an emitted direction has been played (it can take
+ * a quarter of a second): the delay before the FIRST repeat then runs from
+ * the end of the step, not from its start. Otherwise a slow step eats the
+ * delay and a second step fires before a finger can let go (D79). */
+void chord_done(Chord *c, uint16_t now_cs);
 /* Direction mask -> step. False for 0 or contradictory masks. */
 bool chord_to_step(uint8_t mask, int8_t *dx, int8_t *dy);
 

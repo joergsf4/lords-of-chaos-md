@@ -7,6 +7,8 @@
 
 #include "../core/colors.h"
 #include "../core/gen/data.h"
+#include "../core/items.h"
+#include "../core/ride.h"
 #include "../core/tutorial.h"
 #include "input.h"
 #include "music.h"
@@ -152,7 +154,7 @@ void screen_phase(const char *who, uint8_t round, uint8_t n,
 
 #define HELP_MAX 4096                  /* keys.hlp is ~3.2 KB */
 #define HELP_PAGES_MAX 72
-#define LEXICON_MAX 6656
+#define LEXICON_MAX 7168
 
 #define SPELLS_MAX 4600
 
@@ -452,13 +454,35 @@ static void lexicon_draw_list(const Lexicon *lex, uint8_t section,
     centred(29, C_GREY, "Enter Detail   Esc zur\201ck");
 }
 
+/* The description of lexicon page `entry` (creatures first, then objects),
+ * one line per row from `row` up to (excluding) `last`. Nothing when the
+ * texts are not loaded. */
+static void lexicon_draw_text(uint16_t entry, uint8_t row, uint8_t last)
+{
+    char buf[40];
+    uint16_t off;
+    uint8_t title_len, lines, i;
+    uint16_t page_off[HELP_PAGES_MAX];
+    if (!lex_len || (uint16_t)entry >= help_parse(lex_buf, lex_len, page_off))
+        return;
+    off = page_off[entry];
+    title_len = lex_buf[off];
+    off = (uint16_t)(off + 1 + title_len);
+    lines = lex_buf[off++];
+    for (i = 0; i < lines && row < last; i++) {
+        uint8_t len = lex_buf[off++];
+        memcpy(buf, lex_buf + off, len);
+        buf[len] = 0;
+        off = (uint16_t)(off + len);
+        render_menu_text(1, row++, C_BRIGHT_WHITE, buf);
+    }
+}
+
 /* Detail page: portrait, table values, description from lexicon.hlp. */
 static void lexicon_draw_detail(uint16_t entry)
 {
     char buf[40];
-    uint16_t off;
-    uint8_t pages, title_len, lines, i, row = 2;
-    uint16_t page_off[HELP_PAGES_MAX];
+    uint8_t row = 2;
     bool is_creature = entry < CR_COUNT;
 
     render_screen_clear();
@@ -519,23 +543,7 @@ static void lexicon_draw_detail(uint16_t entry)
         row = 9;
     }
 
-    /* description text from the lexicon pages (page = entry index) */
-    if (lex_len) {
-        pages = help_parse(lex_buf, lex_len, page_off);
-        if ((uint16_t)entry < pages) {
-            off = page_off[entry];
-            title_len = lex_buf[off];
-            off = (uint16_t)(off + 1 + title_len);
-            lines = lex_buf[off++];
-            for (i = 0; i < lines && row < 26; i++) {
-                uint8_t len = lex_buf[off++];
-                memcpy(buf, lex_buf + off, len);
-                buf[len] = 0;
-                off = (uint16_t)(off + len);
-                render_menu_text(1, row++, C_BRIGHT_WHITE, buf);
-            }
-        }
-    }
+    lexicon_draw_text(entry, row, 26);
     centred(29, C_GREY, "Esc zur\201ck");
 }
 
@@ -737,5 +745,113 @@ void screen_lexicon(const Lexicon *lex)
             sound_play(SND_MENU);
             lexicon_draw_list(lex, section, cursor[section]);
         }
+    }
+}
+
+/* ---------- inventory (D77) ---------- */
+
+#define INV_LIST_ROW 4
+#define INV_INFO_ROW 12
+
+/* What the selected object is for, in numbers (the lexicon page says the rest). */
+static void inventory_facts(uint8_t kind)
+{
+    const ObjectDef *o = &OBJECTS[kind];
+    char buf[40];
+    snprintf(buf, sizeof buf, "Gewicht %u", o->weight);
+    render_menu_text(5, INV_INFO_ROW + 1, C_GREY, buf);
+    if (o->weapon == WEAPON_SHIELD) {
+        snprintf(buf, sizeof buf, "Getragen: Vert. +%u", WEAPONS[o->weapon].defence);
+        render_menu_text(5, INV_INFO_ROW + 2, C_BRIGHT_CYAN, buf);
+    } else if (o->weapon != WEAPON_NONE) {
+        const WeaponDef *wd = &WEAPONS[o->weapon];
+        snprintf(buf, sizeof buf, "In der Hand: Kampf +%u", wd->combat);
+        render_menu_text(5, INV_INFO_ROW + 2, C_BRIGHT_CYAN, buf);
+        snprintf(buf, sizeof buf, "Getragen: Vert. +%u", wd->defence);
+        render_menu_text(5, INV_INFO_ROW + 3, C_BRIGHT_CYAN, buf);
+    } else if (o->eat_con || o->eat_mana) {
+        snprintf(buf, sizeof buf, "Essen (e): +%u Kons +%u Mana", o->eat_con,
+                 o->eat_mana);
+        render_menu_text(5, INV_INFO_ROW + 2, C_BRIGHT_GREEN, buf);
+    } else if (o->vp) {
+        snprintf(buf, sizeof buf, "Wert %u VP durchs Portal", o->vp);
+        render_menu_text(5, INV_INFO_ROW + 2, C_BRIGHT_YELLOW, buf);
+    }
+}
+
+static void inventory_draw(const World *w, uint8_t unit, uint8_t cursor,
+                           const char *msg)
+{
+    const Unit *u = &w->units[unit];
+    char buf[40];
+    uint8_t i;
+    render_screen_clear();
+    render_heading_centred(0, C_BRIGHT_YELLOW, "Inventar");
+    snprintf(buf, sizeof buf, "Tragkraft %u/%u", items_weight(w, unit),
+             CREATURES[ride_actor_kind(u)].carry);
+    render_menu_text(1, 2, C_GREY, buf);
+    if (u->item_count == 0)
+        render_menu_text(1, INV_LIST_ROW, C_GREY, "Nichts getragen.");
+    for (i = 0; i < u->item_count; i++) {
+        bool hand = u->in_use == i;
+        snprintf(buf, sizeof buf, "%c%c %-18.18s%s", i == cursor ? '>' : ' ',
+                 'a' + i, OBJECTS[u->items[i]].name, hand ? " Hand" : "");
+        render_menu_text(1, (uint8_t)(INV_LIST_ROW + i),
+                         hand ? C_BRIGHT_YELLOW : C_BRIGHT_WHITE, buf);
+    }
+    if (u->item_count) {
+        uint8_t kind = u->items[cursor];
+        render_frame(0, INV_INFO_ROW * 8 - 4, 319, 27 * 8, C_BRIGHT_BLUE);
+        render_draw_tile(OBJECTS[kind].tile, 4, INV_INFO_ROW * 8 + 4);
+        render_menu_text(5, INV_INFO_ROW, C_BRIGHT_WHITE, OBJECTS[kind].name);
+        inventory_facts(kind);
+        lexicon_draw_text((uint16_t)(CR_COUNT + kind), INV_INFO_ROW + 5, 27);
+    }
+    if (msg)
+        render_menu_text(1, 27, C_BRIGHT_GREEN, msg);
+    centred(29, C_GREY, "Pfeile w\204hlen  Enter/w Hand  Esc zur\201ck");
+}
+
+void screen_inventory(World *w, uint8_t unit)
+{
+    struct keyboard_event_t e;
+    Unit *u = &w->units[unit];
+    uint8_t cursor = u->in_use < u->item_count ? u->in_use : 0;
+    const char *msg = NULL;
+
+    lexicon_texts_load();
+    inventory_draw(w, unit, cursor, msg);
+    for (;;) {
+        while (!kbuf_poll_event(&e))
+            audio_poll();
+        if (!e.isdown)
+            continue;
+        if (e.vkey == VK_ESC || e.ascii == 'i') {
+            sound_play(SND_BACK);
+            return;
+        }
+        if (!u->item_count)
+            continue;
+        msg = NULL;
+        if (e.vkey == VK_UP)
+            cursor = cursor ? (uint8_t)(cursor - 1) : (uint8_t)(u->item_count - 1);
+        else if (e.vkey == VK_DOWN)
+            cursor = (uint8_t)((cursor + 1) % u->item_count);
+        else if (e.ascii >= 'a' && e.ascii < 'a' + u->item_count && e.ascii != 'w')
+            cursor = (uint8_t)(e.ascii - 'a');
+        else if (e.ascii == 13 || e.ascii == 'w' || e.vkey == VK_SPACE) {
+            if (OBJECTS[u->items[cursor]].weapon == WEAPON_SHIELD)
+                msg = "Das Schild wird getragen, nicht gef\201hrt.";
+            else if (u->in_use == cursor)    /* in hand already: put it away */
+                msg = items_wield(w, unit, NO_ITEM) ? "Leere H\204nde."
+                                                    : "Zu wenig AP.";
+            else
+                msg = items_wield(w, unit, cursor) ? "In die Hand genommen."
+                                                   : "Zu wenig AP.";
+            sound_play(SND_CONFIRM);
+        } else
+            continue;
+        sound_play(SND_MENU);
+        inventory_draw(w, unit, cursor, msg);
     }
 }

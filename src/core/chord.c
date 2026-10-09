@@ -72,6 +72,18 @@ uint8_t chord_key(Chord *c, uint8_t arrow, bool down, uint16_t now)
     return 0;
 }
 
+uint8_t chord_keys(Chord *c, uint8_t mask, bool down, uint16_t now)
+{
+    uint8_t bit, m = 0, r;
+    for (bit = 1; bit <= ARROW_RIGHT; bit = (uint8_t)(bit << 1))
+        if (mask & bit) {
+            r = chord_key(c, bit, down, now);
+            if (r)
+                m = r;
+        }
+    return m;
+}
+
 uint8_t chord_poll(Chord *c, uint16_t now)
 {
     if (c->pending) {
@@ -88,6 +100,12 @@ uint8_t chord_poll(Chord *c, uint16_t now)
         return emit(c, c->held, now);
     }
     return 0;
+}
+
+void chord_done(Chord *c, uint16_t now)
+{
+    if (!c->repeating && c->held)
+        c->t_emit = now;
 }
 
 bool chord_to_step(uint8_t mask, int8_t *dx, int8_t *dy)

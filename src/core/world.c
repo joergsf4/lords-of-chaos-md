@@ -19,7 +19,8 @@ static const bool FEATURE_BLOCKS[FE_COUNT] = {
     [FE_CHAIR] = false, [FE_DRAWERS] = true, [FE_CHEST] = true,
     [FE_TREE] = true, [FE_ROCK] = true, [FE_DOOR_LOCKED] = true,
     [FE_CHEST_FREE] = true, [FE_WINDOW] = true, [FE_FENCE] = true,
-    [FE_LEAF_N] = true, [FE_LEAF_E] = true, [FE_LEAF_S] = true, [FE_LEAF_W] = true,
+    /* door leaves (D61) are a drawing marker only: they never block (D76) */
+    [FE_LEAF_N] = false, [FE_LEAF_E] = false, [FE_LEAF_S] = false, [FE_LEAF_W] = false,
 };
 
 /* Tall features that block ground sight (GDD 3.4). A table rather than an
@@ -1055,16 +1056,6 @@ static void leaf_remove(World *w, int16_t x, int16_t y)
     }
 }
 
-bool world_door_jammed(const World *w, int16_t x, int16_t y, int16_t fx, int16_t fy)
-{
-    int16_t lx, ly;
-    uint8_t leaf;
-    if (!world_wrap(w, &x, &y) || w->feature[y][x] != FE_DOOR_CLOSED ||
-        world_is_gate(w, x, y))
-        return false;
-    return !world_leaf_spot(w, x, y, fx, fy, &lx, &ly, &leaf);
-}
-
 bool world_open_door(World *w, uint8_t unit, int16_t x, int16_t y)
 {
     int16_t lx = -1, ly = -1;
@@ -1079,12 +1070,12 @@ bool world_open_door(World *w, uint8_t unit, int16_t x, int16_t y)
         return false;                    /* creature without hands */
     if (!world_can_pay(w, unit, ACT_OPEN_DOOR))
         return false;
-    if (!world_is_gate(w, x, y) &&       /* gates fold flat (D61) */
-        !world_leaf_spot(w, x, y, u->x, u->y, &lx, &ly, &leaf))
-        return false;                    /* jammed: no room for the leaf */
     world_pay(w, unit, ACT_OPEN_DOOR);
     w->feature[y][x] = FE_DOOR_OPEN;
-    if (leaf != FE_NONE)
+    /* the leaf is only drawn, it never blocks (D76): no room, no marker.
+     * Gates fold flat (D61). */
+    if (!world_is_gate(w, x, y) &&
+        world_leaf_spot(w, x, y, u->x, u->y, &lx, &ly, &leaf))
         w->feature[ly][lx] = leaf;
     world_map_changed(w);                /* static view layers change */
     world_poke(w, x, y);

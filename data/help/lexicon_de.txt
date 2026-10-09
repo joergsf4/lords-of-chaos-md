@@ -143,175 +143,195 @@ nur mit Magie zu fällen. Gehoert
 nur dem, der ihn rief.
 
 = Schriftrolle
-Einmal lesen (r), dann ist sie
-verbraucht. Was darauf steht,
-ueberrascht immer wieder.
+Wozu: gibt einen Hinweis auf das
+Szenario. Mit r lesen, dann ist
+sie verbraucht. Erst in die Hand
+nehmen (w oder Inventar).
 
 = Schwert
-Die ausgewogene Waffe (2w8 Schaden):
-ordentlicher Kampfbonus, kein
-Sonderwurf. Gehoert in jede Hand.
+Wozu: Nahkampf. In der Hand +10
+Kampf; getragen +4 Verteidigung.
+Ausgewogen und gut zu fuehren,
+aber schwer (10).
 
 = Messer
-Leicht und billig: kaum Kampfbonus,
-aber gut zum Werfen (t).
+Wozu: Werfen (t) - Wurfwert 20,
+mehr als der Nahkampf. In der Hand
+nur +4 Kampf, dafuer federleicht.
 
 = Speer
-Starker Stoss, gutes Wurfgewicht.
-Der Speer ist die Waffe des
-Zentauren.
+Wozu: Stoss und Wurf. +8 Kampf,
+getragen +4 Verteidigung; als
+Wurfwaffe (t) stark (23).
 
 = Keule
-Der Troll-Favorit: schwer und
-kraefig, wenn auch plump.
+Wozu: wuchtiger Nahkampf fuer
+Kraeftige: +5 Kampf, aber schwer
+(9) und plump beim Werfen.
 
 = Axt
-Die Waffe der Zwerge (2w10 Schaden):
-schlaegt haerter als das Schwert und
-wiegt dafuer mehr.
+Wozu: harter Nahkampf. +9 Kampf,
+kein Schutz; wirft (t) sehr stark
+(28) - die Waffe der Zwerge.
 
 = Wurfstern
-Fuer Ninja: extrem leicht, fliegt
-weit und trift auch aus der Distanz.
+Wozu: nur zum Werfen (t), Wurfwert
+25, kaum Gewicht. Im Nahkampf
+bringt er nichts.
 
 = Slayer
-Eine Klinge gegen Untote: verwundet
-Geister und Vampire wie Lebewesen.
+Wozu: Untote bekaempfen. +12 Kampf,
+getragen +4 Verteidigung; verwundet
+auch Geister und Vampire.
 
 = Magie-Slayer
-Die beste Waffe des Spiels (3w8
-Schaden): magisch, schneidet durch
-jede Ruestung und Untote.
+Wozu: die staerkste Waffe. +30
+Kampf, getragen +12 Verteidigung;
+magisch, verwundet jeden Untoten.
 
 = Bogen
-Schiessen (f) bis sechs Felder weit:
-ohne Kampfbonus des Ziels die
-sicherste Art, anzugreifen.
+Wozu: Fernkampf. In der Hand mit f
+schiessen (Reichweite 16, Angriff
+15); verzauberte Boegen treffen
+staerker und weiter.
 
 = Schild
-Zaehlt getragen - nie in der Hand
-(D28): +13 Verteidigung, ganz gleich
-wo im Gepaeck. Stapelt nicht.
+Wozu: Verteidigung. Wird nur
+getragen, nie gefuehrt: +13
+Verteidigung, egal wo im Gepaeck.
+Stapelt nicht mit Waffenschutz.
 
 = Gold
-Der Klassiker unter den Schaetzen:
-40 Punkte durchs Portal.
+Wozu: Siegpunkte. 40 VP, wenn der
+Zauberer es durchs Portal bringt.
+Schwer (6) - nur wer genug traegt.
 
 = Smaragd
-Gruener Stein, 10 Punkte. Leicht
-genug fuer mehrere im Gepaeck.
+Wozu: Siegpunkte. 10 VP durchs
+Portal; mit Gewicht 2 leicht.
 
 = Runenstein
-Alte Schrift auf Stein: 6 Punkte,
-und irgendwo lehrt er etwas.
+Wozu: Siegpunkte. 6 VP durchs
+Portal. Alte Schrift, kaum Gewicht.
 
 = Zauberstab
-Magie zum Anfassen: 8 Punkte und
-ein hübscher Stab.
+Wozu: Siegpunkte. 8 VP durchs
+Portal; nur ein huebscher Stab,
+er zaubert nicht.
 
 = Rubin
-Rot und schwer genug: 20 Punkte
-fuer die Rueckreise.
+Wozu: Siegpunkte. 20 VP durchs
+Portal bei Gewicht 2.
 
 = Diamant
-Der Edelstein: 30 Punkte, wiegt
-fast nichts. Immer aufheben.
+Wozu: Siegpunkte. 30 VP durchs
+Portal bei Gewicht 2 - der beste
+Gegenwert pro Gewicht.
 
 = Apfel
-Gesundes aus dem Garten: stellt
-4 Konstitution wieder her.
+Wozu: heilen. Mit e essen: +10
+Konstitution und mehr Ausdauer.
 
 = Pilz
-Waldkost: 6 Konstitution. Nicht
-immer vertrauenswuerdig.
+Wozu: heilen. Mit e essen: +6
+Konstitution und mehr Ausdauer.
 
 = Magischer Apfel
-Ein Apfel mit Zauber: 4 Mana
-statt Konstitution.
+Wozu: Mana. Mit e essen: +4 Mana
+fuer den Zauberer.
 
 = Magischer Pilz
-Der Pilz des Zauberers: 6 Mana
-frisch geerntet.
+Wozu: Mana. Mit e essen: +6 Mana
+fuer den Zauberer.
 
 = Tuerschluessel
-Oeffnet eine verschlossene Tuer -
-verbraucht sich dabei. Ohne
-Schluessel kostet Aufbrechen
-die dreifachen AP.
+Wozu: eine verschlossene Tuer
+oeffnen (anrempeln) oder eine Tuer
+abschliessen (a + Richtung).
+Er bleibt erhalten.
 
 = Truhenschluessel
-Oeffnet eine Truhe ohne
-AP-Kosten; verbraucht sich.
+Wozu: eine Truhe ohne Gewalt
+oeffnen (anrempeln). Er verbraucht
+sich dabei; ohne Schluessel kostet
+das Aufbrechen dreifache AP.
 
 = Kessel (leer)
-Zum Brauen (v fuellen): leer
-wiegt er viel und wartet auf
-eine Zutat.
+Wozu: Traenke brauen. Mit dem
+Zauber der Trankart und einer
+Zutat fuellt er sich. Sehr schwer.
 
 = Kessel (voll)
-Ein Kessel mit fertigem Trank:
-q trinkt daraus, v fuellt die
-Phiole ab.
+Wozu: fertiger Trank. q trinkt
+daraus, v fuellt eine leere Phiole
+ab. Sehr schwer (15).
 
 = Phiole (leer)
-BrautJaeger-Bedarf: leer in den
-Beutel, am Kessel fuellen.
+Wozu: Trank mitnehmen. Mit v am
+vollen Kessel fuellen, dann spaeter
+mit q trinken.
 
 = Phiole Staerke
-Staerke-Trank: +Kampf fuer einige
-Runden. Gut vor grossen Duellen.
+Wozu: Kampf steigern. q trinken:
+mehr Kampf fuer einige Runden,
+im Balken als Bonus zu sehen.
 
 = Phiole Schutz
-Schutz-Trank: haelt Treffer ab,
-solange er wirkt.
+Wozu: Verteidigung steigern. q
+trinken: mehr Verteidigung fuer
+einige Runden.
 
 = Phiole Unsichtbar
-Unsichtbarkeits-Trank: Feinde
-sehen die Einheit nicht mehr -
-bis sie zuschlaegt.
+Wozu: sich verbergen. q trinken:
+Feinde sehen die Einheit nicht
+mehr, bis sie angreift.
 
 = Phiole Schnell
-Geschwindigkeitstrank: verdoppelt
-die AP einer Runde.
+Wozu: mehr AP. q trinken: die
+Einheit hat fuer einige Runden
+mehr Aktionspunkte.
 
 = Phiole Fliegen
-Flug-Trank: schwebt fuer einige
-Runden - ohne AP-Verlust durch
-Gelaende.
+Wozu: ueber Hindernisse. q
+trinken: die Einheit fliegt fuer
+einige Runden.
 
 = Phiole Heilkraut
-Heil-Trank: schliesst Wunden und
-stellt Konstitution her.
+Wozu: heilen. q trinken stellt
+Konstitution wieder her und
+schliesst Wunden.
 
 = Bombenphiole
-Geworfene Phiole (t): explodiert
-und verwundet alles im Feld.
+Wozu: Flaechenschaden. Mit t
+werfen: sie explodiert und
+verwundet alles auf dem Feld.
 
 = Mistelzweig
-Zutat fuer Schutz- und Heil-Traenke.
-Waechst ueberall, wo Magie ist.
+Wozu: Zutat fuer Schutz- und
+Heiltraenke. In den Kessel legen.
 
 = Kleeblatt
-Gluecksbringer und Zutat: zaehlt
-in manchen Traenken als Glueck.
+Wozu: Zutat fuer Traenke. In den
+Kessel legen; zaehlt als Glueck.
 
 = Kristall
-Zutat fuer Unsichtbarkeit: fein
-geschliffen, streng geheim.
+Wozu: Zutat fuer den
+Unsichtbarkeitstrank. In den
+Kessel legen.
 
 = Schwefel
-Zutat fuer Feuer und Bomben:
-riecht nach dem, was er kann.
+Wozu: Zutat fuer Feuer- und
+Bombentraenke. In den Kessel legen.
 
 = Feeenschwingel
-Fluegelpuder einer Fee: Zutat
-fuer den Flug-Trank.
+Wozu: Zutat fuer den Flugtrank.
+In den Kessel legen.
 
 = Nitro
-Hochexplosive Zutat: die Bombe
-im Braukessel.
+Wozu: Zutat fuer die Bombe. In den
+Kessel legen. Hochexplosiv.
 
 = Drachenkraut
-Die einzige Kost fuer Drachen:
-nur mit ihr im Kessel lassen
-sich Drachen beschwoeren.
+Wozu: Drachen beschwoeren. Nur
+mit ihm im Kessel gelingt der
+Zauber; schwerer Zutat (2).

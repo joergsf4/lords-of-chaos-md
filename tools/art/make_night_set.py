@@ -78,11 +78,11 @@ def pane(c: Canvas, x0: int, y0: int, x1: int, y1: int) -> None:
 
 def windows(only):
     c = Canvas(load("wall_10"))              # horizontal wall: bricks, front view
-    pane(c, 7, 7, 16, 19)
-    c.rect(6, 20, 17, 20, GREY)              # sill
+    pane(c, 7, 10, 16, 17)                   # D81: lower than the door (frame top row 6)
+    c.rect(6, 18, 17, 18, GREY)              # sill
     save("window_h", c, only)
     c = Canvas(load("wall_05"))              # vertical wall: the narrow column
-    pane(c, 9, 5, 14, 18)
+    pane(c, 9, 7, 14, 16)
     save("window_v", c, only)
 
 

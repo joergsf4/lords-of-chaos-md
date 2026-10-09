@@ -52,6 +52,9 @@ void render_message(uint8_t line, uint8_t colour, const char *text);
 void render_messages_redraw(void);
 /* Called for every red (refusal) message, e.g. to play an error sound. */
 void render_set_error_hook(void (*fn)(void));
+/* Called for every message line that is set (D83: main.c feeds the log). */
+void render_set_message_hook(void (*fn)(uint8_t line, uint8_t colour,
+                                        const char *text));
 /* Menu helpers (M4f): black out the map window (and hide the cursor
  * sprite), write one text cell. Text drawn after render_menu_clear must
  * stay within columns 0..26, or it survives the next clear. */

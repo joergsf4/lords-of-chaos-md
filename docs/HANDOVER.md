@@ -48,7 +48,7 @@ Die Rückmeldungen des Playtests stehen mit Befund und Entscheidung in `docs/PLA
 - **Spielstand v8.** Alte Stände werden abgelehnt.
 - **Level 1 (46×46):** Zauberer starten bei (6,6) und (40,30), Portal (33,3), Gegner-Truhe (42,34). Selftests hängen an diesen Koordinaten (d62, d46, Pickup, Szenario). Die Karte entstand aus einem Entwurfsskript (hochskaliertes Gelände + Häuser nach Skizze); seitdem ist `data/maps/many_coloured_land.txt` die Quelle.
 - **Varianten:** `tools/gen_variants.py` hat feste Kästen für Häuser, Garten, Portal, Türstummel (`HOUSE1/2`, `CLEAR_BOXES`, `STUBS`, …). Wer die Häuser verschiebt, muss sie dort nachziehen.
-- **Türen (D61, D65):** Jede Tür braucht ein freies Feld neben dem Durchgang für ihr Blatt; Check `d61` prüft alle Karten. Gezeichnet wird das Blatt seit D65 bei waagerechten Wänden im Rahmen (`door_h_open_tile`), bei senkrechten auf dem Blattfeld. Möbel nicht diagonal neben Türen stellen.
+- **Türen (D61, D65):** Das Türblatt (freies Nachbarfeld, nur Zeichenmarke) **blockiert nicht mehr** (D76), die Tür klemmt nie. Check `d61` prüft weiter, dass jede Tür ein Blattfeld hat. Auch die senkrechten Blätter werden seit D84 in der Türkachel gezeichnet (`door_v_open_*`). Gezeichnet wird das Blatt seit D65 bei waagerechten Wänden im Rahmen (`door_h_open_tile`), bei senkrechten auf dem Blattfeld. Möbel nicht diagonal neben Türen stellen.
 
 ### Nicht im Spiel geprüft
 
@@ -87,7 +87,7 @@ Playtest-Runden A–C (`docs/PLAYTEST-2026-10-05.md`, D40–D50) sind erledigt: 
 - **Werkzeug:** `uv run tools/run.py --vdptest [n]` startet das separate Messprogramm `vdptest` (ADR 0012).
 - **Spielende:** Endbildschirm (Sieg/Niederlage) mit Runden/Kills/Beute/VP, Kampagne verbucht XP/Level; Enter zurück ins Menü, Esc beendet.
 - **Tutorial:** kleine Karte, 7 Schritte (Bewegen → Wechseln → Schlüssel → Truhe → Kampf → Zauber → Portal), Hinweiszeile unten; Runde-1-Sperre aufgehoben.
-- **Lexikon (Taste `i`):** entdeckte Kreaturen/Objekte, Detailseite mit Porträt und Text; persistent in `/loc/lexicon.dat`.
+- **Lexikon (Taste `k`, vorher `i`; `i` ist das Inventar):** entdeckte Kreaturen/Objekte, Detailseite mit Porträt und Text; persistent in `/loc/lexicon.dat`.
 - **Kampf sichtbar und hörbar:** Ereignis-Ring im Core (Schwung/Treffer/Wunde/Verfehlt/Tod/Zauber/Zerschmettern), Frontend spielt Overlay-Animationen und 16 Sounds (Wellenform + ADSR, Kanal 0); KI-Phasen werden animiert (`Turns.on_ai`).
 - (M4-Bestand unverändert: Runden/AP, Kampf D16/D21/D26, Magie inkl. Tränke/Brauen, Objekte, KI, Hidden Map, Speichern, Kontextmenü/Big Map/Log.)
 

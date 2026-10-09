@@ -160,6 +160,24 @@ static uint16_t magic_scale(const Unit *u, uint8_t weapon, uint16_t value)
     return value;
 }
 
+bool items_wield(World *w, uint8_t unit, uint8_t slot)
+{
+    Unit *u;
+    if (unit >= w->unit_count)
+        return false;
+    u = &w->units[unit];
+    if (slot != NO_ITEM && (slot >= u->item_count ||
+                            OBJECTS[u->items[slot]].weapon == WEAPON_SHIELD))
+        return false;                    /* nothing there / the shield never takes the hand */
+    if (slot == u->in_use || (slot == NO_ITEM && u->in_use >= u->item_count))
+        return false;                    /* already in hand */
+    if (!world_can_pay(w, unit, ACT_CHANGE))
+        return false;
+    world_pay(w, unit, ACT_CHANGE);
+    u->in_use = slot;
+    return true;
+}
+
 /* Attack value of a thrown object (K6.4): the weapon table's throw value,
  * other objects weigh nothing as a missile. */
 static uint8_t throw_value(const Unit *u, uint8_t weapon)
@@ -360,44 +378,55 @@ static uint8_t effective(const Unit *u, uint16_t basis)
     return v < 1 ? 1 : (v > 255 ? 255 : (uint8_t)v);
 }
 
+uint8_t items_combat_bonus(const Unit *u)
+{
+    uint8_t weapon = items_in_use_weapon(u);
+    uint16_t v;
+    if (weapon == WEAPON_NONE || !(CREATURES[ride_actor_kind(u)].flags & CF_WEAPONS))
+        return 0;
+    v = magic_scale(u, weapon, WEAPONS[weapon].combat);
+    return v > 255 ? 255 : (uint8_t)v;
+}
+
+uint8_t items_defence_bonus(const Unit *u)
+{
+    uint8_t i, best = 0;
+    if (!(CREATURES[ride_actor_kind(u)].flags & CF_WEAPONS))
+        return 0;
+    /* the best defence of any carried object counts, not the sum (K6.1) */
+    for (i = 0; i < u->item_count; i++) {
+        uint8_t wp = OBJECTS[u->items[i]].weapon;
+        if (wp != WEAPON_NONE) {
+            uint16_t d = magic_scale(u, wp, WEAPONS[wp].defence);
+            if (d > best)
+                best = d > 255 ? 255 : (uint8_t)d;
+        }
+    }
+    return best;
+}
+
 uint8_t items_combat(const World *w, uint8_t unit)
 {
     const Unit *u;
     uint16_t com;
-    uint8_t weapon;
     if (unit >= w->unit_count)
         return 0;
     u = &w->units[unit];
     com = u->com;
     if (effect_active(u, EFF_STRENGTH))
         com = (uint16_t)(com + effect_power(u, EFF_STRENGTH));
-    weapon = items_in_use_weapon(u);
-    if (weapon != WEAPON_NONE && (CREATURES[ride_actor_kind(u)].flags & CF_WEAPONS))
-        com = (uint16_t)(com + magic_scale(u, weapon, WEAPONS[weapon].combat));
+    com = (uint16_t)(com + items_combat_bonus(u));
     return effective(u, com);
 }
 
 uint8_t items_defence(const World *w, uint8_t unit)
 {
     const Unit *u;
-    uint8_t i, best = 0;
     uint16_t def;
     if (unit >= w->unit_count)
         return 0;
     u = &w->units[unit];
-    def = u->def;
-    if (CREATURES[ride_actor_kind(u)].flags & CF_WEAPONS) {
-        /* the best defence of any carried object counts, not the sum (K6.1) */
-        for (i = 0; i < u->item_count; i++) {
-            uint8_t wp = OBJECTS[u->items[i]].weapon;
-            if (wp != WEAPON_NONE) {
-                uint16_t d = magic_scale(u, wp, WEAPONS[wp].defence);
-                if (d > best)
-                    best = d > 255 ? 255 : (uint8_t)d;
-            }
-        }
-        def = (uint16_t)(def + best);
-    }
+    def = (uint16_t)(u->def + items_defence_bonus(u));
     if (effect_active(u, EFF_SHIELD))
         def = (uint16_t)(def + effect_power(u, EFF_SHIELD));
     if (effect_active(u, EFF_PROTECT))
