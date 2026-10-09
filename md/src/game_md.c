@@ -27,6 +27,7 @@
 #include "gen/maps_md.h"
 #include "gen/scenarios.h"
 #include "gen/title_md.h"
+#include "version.h"
 #include "gen/tiles.h"
 #include "items.h"
 #include "lexicon.h"
@@ -2800,6 +2801,8 @@ static void title_screen(void)
             ui_text(8, 27, (frames & 32) ? C_BRIGHT_YELLOW : C_BRIGHT_WHITE, "START DRUECKEN", 24);
         if (frames == 1)
             ui_text(0, 27, C_GREY, "MD-Port", 8);
+        if (frames == 1)
+            ui_text((u8)(40 - sizeof LOC_VERSION + 1), 27, C_GREY, LOC_VERSION, (u8)sizeof LOC_VERSION);
         SYS_doVBlankProcess();
     }
 }

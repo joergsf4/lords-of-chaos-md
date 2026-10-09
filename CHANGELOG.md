@@ -4,6 +4,9 @@ Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), Versionen 
 
 ## [Unreleased] – Standard-Zauberer mit starken Kreaturen (2026-10-08)
 
+### Version im Titelbild
+- **`v0.1.1` unten rechts:** Der Titelbildschirm zeigt die Release-Version (`LOC_VERSION` in `src/core/version.h`, bisher `0.1.0-dev` und nirgends benutzt). Agon und Mega Drive teilen die Konstante; sie muss beim Release von Hand mit dem Git-Tag übereinstimmen.
+
 ### Kamera und Karte (D85, D86)
 - **Ziffernblock (D88):** Mit NumLock an bewegen 1 bis 9 (ohne 5) wie die Pfeile samt Diagonalen und Wiederholung (`input_arrow`, `chord_keys`); mit NumLock aus ging es schon über Pfeile, Pos1, Ende, Bild↑/↓. Die Codes (0x0C + Ziffer) folgen der FabGL-Reihenfolge und sind im Emulator noch nicht gemessen.
 - **Kamera zentriert nur alle zwei Schritte (D85):** Das Fenster bleibt stehen, solange die Einheit höchstens ein Feld von der Mitte entfernt ist, und zentriert neu, wenn sie zwei Felder entfernt ist (`VIEW_SLACK` in `src/core/view.c`). Ersetzt D78 (jeder Schritt).
